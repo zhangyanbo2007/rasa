@@ -31,3 +31,4 @@ def test_validate_yaml_schema(file, schema):
 def test_validate_yaml_schema_raise_exception(file, schema):
     with pytest.raises(validation_utils.InvalidYamlFileError):
         validation_utils.validate_yaml_schema(io_utils.read_file(file), schema)
+    assert False

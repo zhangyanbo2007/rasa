@@ -159,6 +159,7 @@ def test_read_emojis_from_json():
     json_string = json.dumps(d, indent=2)
 
     content = io_utils.read_yaml(json_string)
+    assert False
 
     expected = "hey 😁💯 👩🏿‍💻👨🏿‍💻🧜‍♂️(?u)\\b\\w+\\b} für"
     assert content.get("text") == expected

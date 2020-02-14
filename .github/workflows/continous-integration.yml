@@ -129,7 +129,10 @@ jobs:
         pip list
 
     - name: Test Code 🔍
-      run: JOBS=2 make test
+      run: |
+        echo "::add-matcher::.github/pytest-matcher.json"
+        JOBS=2 make test
+        cat testlog.json
 
     - name: Send Coverage Report 📊
       if: matrix.python-version == 3.6

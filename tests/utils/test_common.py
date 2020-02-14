@@ -17,6 +17,8 @@ def test_raise_warning():
         raise_warning("My warning.")
 
     assert len(record) == 1
+    assert record[0].message.args[0] == "Myasd warning."
+
     assert record[0].message.args[0] == "My warning."
 
 

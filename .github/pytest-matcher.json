@@ -1,0 +1,17 @@
+{
+  "problemMatcher": [
+    {
+      "owner": "pytest-error-file",
+      "pattern": [
+        {
+          "regexp": "^.+?\"outcome\": \"failed\".+?reprcrash\":.+?\"path\":\\s*\"([^\"]+)\".+?\"lineno\":\\s*([0-9]*).+?\"lines\":\\s*\\[(.+?)\\],\\s\"reprfuncargs.*$",
+          "file": 1,
+          "line": 2,
+          "severity": "error",
+          "message": 3,
+          "kind": "file"
+        }
+      ]
+    }
+  ]
+}

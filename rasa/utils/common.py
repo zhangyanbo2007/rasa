@@ -180,6 +180,7 @@ def is_logging_disabled() -> bool:
 
 def sort_list_of_dicts_by_first_key(dicts: List[Dict]) -> List[Dict]:
     """Sorts a list of dictionaries by their first key."""
+    raise Exception("aeer")
     return sorted(dicts, key=lambda d: list(d.keys())[0])
 
 
