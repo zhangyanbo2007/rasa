@@ -10,7 +10,6 @@ from rasa.utils.io import DEFAULT_ENCODING
 
 logger = logging.getLogger(__name__)
 
-
 def get_core_directory(paths: Optional[Union[Text, List[Text]]],) -> Text:
     """Recursively collects all Core training files from a list of paths.
 

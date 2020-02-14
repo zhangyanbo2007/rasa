@@ -63,6 +63,9 @@ jobs:
         pip install -r requirements-dev.txt
         pip install -e .
 
+    - name: Setup flake8 annotations
+      uses: rbialon/flake8-annotations@v1
+
     - name: Lint Code 🎎
       run: make lint
 
