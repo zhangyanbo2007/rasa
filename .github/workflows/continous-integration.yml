@@ -131,7 +131,7 @@ jobs:
     - name: Test Code 🔍
       run: |
         echo "::add-matcher::.github/pytest-matcher.json"
-        JOBS=2 make test
+        JOBS=1 make test
         cat testlog.json
 
     - name: Send Coverage Report 📊
