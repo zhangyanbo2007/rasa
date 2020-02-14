@@ -131,8 +131,8 @@ jobs:
     - name: Test Code 🔍
       run: |
         echo "::add-matcher::.github/pytest-matcher.json"
-        JOBS=1 make test
-        cat testlog.json
+        JOBS=1 make test ; cat testlog.json
+        exit 1
 
     - name: Send Coverage Report 📊
       if: matrix.python-version == 3.6
