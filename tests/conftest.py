@@ -53,7 +53,9 @@ def pytest_runtest_makereport(item, call):
 def pytest_sessionfinish(session, exitstatus):
     for result in session.results.values():
         if result.failed:
-            e = result.longreprtext.encode("unicode_escape").decode("utf-8")
+            crash = result.longrepr.reprcrash
+            e = f"{crash.message} ({crash.path}:{crash.lineno})"
+            e = e.encode("unicode_escape").decode("utf-8")
             print(f"::error file={result.location[0]} line={result.location[1]}::{e}")
 
 
