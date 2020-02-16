@@ -36,6 +36,27 @@ DEFAULT_CONFIG_PATH = "rasa/cli/default_config.yml"
 # from a separatedly installable pytest-cli plugin.
 pytest_plugins = ["pytester"]
 
+
+def pytest_sessionstart(session):
+    session.results = dict()
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    result = outcome.get_result()
+
+    if result.when == "call":
+        item.session.results[item] = result
+
+
+def pytest_sessionfinish(session, exitstatus):
+    for result in session.results.values():
+        if result.failed:
+            e = result.longreprtext.encode("unicode_escape").decode("utf-8")
+            print(f"::error file={result.location[0]} line={result.location[1]}::{e}")
+
+
 # https://github.com/pytest-dev/pytest-asyncio/issues/68
 # this event_loop is used by pytest-asyncio, and redefining it
 # is currently the only way of changing the scope of this fixture
