@@ -1,28 +1,38 @@
 import logging
 from collections import defaultdict, OrderedDict
+from pathlib import Path
 
 import numpy as np
-import os
-import pickle
-import scipy.sparse
-from typing import Any, Dict, Optional, Text, List
+from typing import Any, Dict, Optional, Text, List, Type, Union
 
+from rasa.nlu.tokenizers.spacy_tokenizer import POS_TAG_KEY
 from rasa.constants import DOCS_URL_COMPONENTS
+from rasa.nlu.components import Component
 from rasa.nlu.tokenizers.tokenizer import Token
-from rasa.nlu.featurizers.featurizer import Featurizer
+from rasa.nlu.tokenizers.tokenizer import Tokenizer
+from rasa.nlu.featurizers.featurizer import SparseFeaturizer
 from rasa.nlu.config import RasaNLUModelConfig
 from rasa.nlu.training_data import Message, TrainingData
 from rasa.nlu.constants import TOKENS_NAMES, TEXT, SPARSE_FEATURE_NAMES
 from rasa.nlu.model import Metadata
+import rasa.utils.io as io_utils
 
 logger = logging.getLogger(__name__)
 
+END_OF_SENTENCE = "EOS"
+BEGIN_OF_SENTENCE = "BOS"
 
-class LexicalSyntacticFeaturizer(Featurizer):
 
-    provides = [SPARSE_FEATURE_NAMES[TEXT]]
+class LexicalSyntacticFeaturizer(SparseFeaturizer):
+    """Creates features for entity extraction.
 
-    requires = [TOKENS_NAMES[TEXT]]
+    Moves with a sliding window over every token in the user message and creates
+    features according to the configuration.
+    """
+
+    @classmethod
+    def required_components(cls) -> List[Type[Component]]:
+        return [Tokenizer]
 
     defaults = {
         # 'features' is [before, word, after] array with before, word,
@@ -32,19 +42,7 @@ class LexicalSyntacticFeaturizer(Featurizer):
         # POS features require 'SpacyTokenizer'.
         "features": [
             ["low", "title", "upper"],
-            [
-                "BOS",
-                "EOS",
-                "low",
-                "prefix5",
-                "prefix2",
-                "suffix5",
-                "suffix3",
-                "suffix2",
-                "upper",
-                "title",
-                "digit",
-            ],
+            ["BOS", "EOS", "low", "upper", "title", "digit"],
             ["low", "title", "upper"],
         ]
     }
@@ -58,8 +56,10 @@ class LexicalSyntacticFeaturizer(Featurizer):
         "suffix3": lambda token: token.text[-3:],
         "suffix2": lambda token: token.text[-2:],
         "suffix1": lambda token: token.text[-1:],
-        "pos": lambda token: token.data.get("pos") if "pos" in token.data else None,
-        "pos2": lambda token: token.data.get("pos")[:2]
+        "pos": lambda token: token.data.get(POS_TAG_KEY)
+        if POS_TAG_KEY in token.data
+        else None,
+        "pos2": lambda token: token.data.get(POS_TAG_KEY)[:2]
         if "pos" in token.data
         else None,
         "upper": lambda token: token.text.isupper(),
@@ -113,8 +113,8 @@ class LexicalSyntacticFeaturizer(Featurizer):
         all_features = []
         for example in training_data.training_examples:
             # [:-1] to remove CLS token
-            tokens = example.get(TOKENS_NAMES[TEXT])[:-1]
-            all_features.append(self._tokens_to_features(tokens))
+            tokens_without_cls = example.get(TOKENS_NAMES[TEXT])[:-1]
+            all_features.append(self._tokens_to_features(tokens_without_cls))
 
         # build vocabulary of features
         feature_vocabulary = self._build_feature_vocabulary(all_features)
@@ -159,6 +159,7 @@ class LexicalSyntacticFeaturizer(Featurizer):
     def _create_sparse_features(self, message: Message) -> None:
         """Convert incoming messages into sparse features using the configured
         features."""
+        import scipy.sparse
 
         # [:-1] to remove CLS token
         tokens = message.get(TOKENS_NAMES[TEXT])[:-1]
@@ -205,7 +206,7 @@ class LexicalSyntacticFeaturizer(Featurizer):
                 prefix = prefixes[current_feature_idx]
 
                 for feature in configured_features[current_feature_idx]:
-                    token_features[prefix + ":" + feature] = self._get_feature_value(
+                    token_features[f"{prefix}:{feature}"] = self._get_feature_value(
                         feature, token, token_idx, pointer_position, len(tokens)
                     )
 
@@ -224,14 +225,15 @@ class LexicalSyntacticFeaturizer(Featurizer):
             [len(sentence_features) + 1, self.number_of_features]
         )
 
-        for token_idx, toke_features in enumerate(sentence_features):
-            for feature_name, feature_value in toke_features.items():
+        for token_idx, token_features in enumerate(sentence_features):
+            for feature_name, feature_value in token_features.items():
+                feature_value_str = str(feature_value)
                 if (
                     feature_name in self.feature_to_idx_dict
-                    and str(feature_value) in self.feature_to_idx_dict[feature_name]
+                    and feature_value_str in self.feature_to_idx_dict[feature_name]
                 ):
                     feature_idx = self.feature_to_idx_dict[feature_name][
-                        str(feature_value)
+                        feature_value_str
                     ]
                     one_hot_feature_vector[token_idx][feature_idx] = 1
 
@@ -247,11 +249,11 @@ class LexicalSyntacticFeaturizer(Featurizer):
         token_idx: int,
         pointer_position: int,
         token_length: int,
-    ) -> Any:
-        if feature == "EOS":
+    ) -> Union[bool, int, Text]:
+        if feature == END_OF_SENTENCE:
             return token_idx + pointer_position == token_length - 1
 
-        if feature == "BOS":
+        if feature == BEGIN_OF_SENTENCE:
             return token_idx + pointer_position == 0
 
         if feature not in self.function_dict:
@@ -280,10 +282,8 @@ class LexicalSyntacticFeaturizer(Featurizer):
 
         file_name = meta.get("file")
 
-        with open(
-            os.path.join(model_dir, file_name + ".feature_to_idx_dict.pkl"), "rb"
-        ) as f:
-            feature_to_idx_dict = pickle.load(f)
+        feature_to_idx_file = Path(model_dir) / f"{file_name}.feature_to_idx_dict.pkl"
+        feature_to_idx_dict = io_utils.json_unpickle(feature_to_idx_file)
 
         return LexicalSyntacticFeaturizer(meta, feature_to_idx_dict=feature_to_idx_dict)
 
@@ -291,9 +291,7 @@ class LexicalSyntacticFeaturizer(Featurizer):
         """Persist this model into the passed directory.
         Return the metadata necessary to load the model again."""
 
-        with open(
-            os.path.join(model_dir, file_name + ".feature_to_idx_dict.pkl"), "wb"
-        ) as f:
-            pickle.dump(self.feature_to_idx_dict, f)
+        feature_to_idx_file = Path(model_dir) / f"{file_name}.feature_to_idx_dict.pkl"
+        io_utils.json_pickle(feature_to_idx_file, self.feature_to_idx_dict)
 
         return {"file": file_name}

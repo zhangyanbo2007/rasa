@@ -1,43 +1,40 @@
 import numpy as np
 import typing
-from typing import Any, Optional, Text, Dict
+from typing import Any, Optional, Text, Dict, List, Type
 
 from rasa.nlu.config import RasaNLUModelConfig
-from rasa.nlu.featurizers.featurizer import Featurizer
+from rasa.nlu.components import Component
+from rasa.nlu.featurizers.featurizer import DenseFeaturizer
+from rasa.nlu.utils.spacy_utils import SpacyNLP
+from rasa.nlu.tokenizers.spacy_tokenizer import SpacyTokenizer
 from rasa.nlu.training_data import Message, TrainingData
-
-if typing.TYPE_CHECKING:
-    from spacy.tokens import Doc
-
 from rasa.nlu.constants import (
     TEXT,
     SPACY_DOCS,
     DENSE_FEATURE_NAMES,
     DENSE_FEATURIZABLE_ATTRIBUTES,
-    TOKENS_NAMES,
 )
+from rasa.utils.tensorflow.constants import POOLING, MEAN_POOLING
+
+if typing.TYPE_CHECKING:
+    from spacy.tokens import Doc
 
 
-class SpacyFeaturizer(Featurizer):
-
-    provides = [
-        DENSE_FEATURE_NAMES[attribute] for attribute in DENSE_FEATURIZABLE_ATTRIBUTES
-    ]
-
-    requires = [
-        SPACY_DOCS[attribute] for attribute in DENSE_FEATURIZABLE_ATTRIBUTES
-    ] + [TOKENS_NAMES[attribute] for attribute in DENSE_FEATURIZABLE_ATTRIBUTES]
+class SpacyFeaturizer(DenseFeaturizer):
+    @classmethod
+    def required_components(cls) -> List[Type[Component]]:
+        return [SpacyNLP, SpacyTokenizer]
 
     defaults = {
         # Specify what pooling operation should be used to calculate the vector of
         # the CLS token. Available options: 'mean' and 'max'
-        "pooling": "mean"
+        POOLING: MEAN_POOLING
     }
 
     def __init__(self, component_config: Optional[Dict[Text, Any]] = None):
         super().__init__(component_config)
 
-        self.pooling_operation = self.component_config["pooling"]
+        self.pooling_operation = self.component_config[POOLING]
 
     def _features_for_doc(self, doc: "Doc") -> np.ndarray:
         """Feature vector for a single document / sentence / tokens."""

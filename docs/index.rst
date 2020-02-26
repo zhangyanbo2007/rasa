@@ -30,8 +30,8 @@ Understand messages, hold conversations, and connect to messaging channels and A
    user-guide/messaging-and-voice-channels
    user-guide/evaluating-models
    user-guide/validate-files
-   user-guide/running-the-server
-   user-guide/running-rasa-with-docker
+   user-guide/configuring-http-api
+   user-guide/how-to-deploy
    user-guide/cloud-storage
 
 .. toctree::
@@ -57,6 +57,7 @@ Understand messages, hold conversations, and connect to messaging channels and A
    core/domains
    core/responses
    core/actions
+   core/reminders-and-external-events
    core/policies
    core/slots
    core/forms
@@ -93,6 +94,7 @@ Understand messages, hold conversations, and connect to messaging channels and A
    api/lock-stores
    api/training-data-importers
    api/core-featurization
+   api/tensorflow_usage
    migration-guide
    changelog
 

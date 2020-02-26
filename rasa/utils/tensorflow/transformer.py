@@ -15,6 +15,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         units: int,
         num_heads: int,
         attention_dropout_rate: float = 0.0,
+        sparsity: float = 0.8,
         unidirectional: bool = False,
         use_key_relative_position: bool = False,
         use_value_relative_position: bool = False,
@@ -42,11 +43,20 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 
         self._depth = units // self.num_heads
 
-        self._wq = DenseWithSparseWeights(units=units, use_bias=False)
-        self._wk = DenseWithSparseWeights(units=units, use_bias=False)
-        self._wv = DenseWithSparseWeights(units=units, use_bias=False)
-
-        self._dense = DenseWithSparseWeights(units=units)
+        # process queries
+        self._wq = DenseWithSparseWeights(
+            units=units, use_bias=False, sparsity=sparsity
+        )
+        # process keys
+        self._wk = DenseWithSparseWeights(
+            units=units, use_bias=False, sparsity=sparsity
+        )
+        # process values
+        self._wv = DenseWithSparseWeights(
+            units=units, use_bias=False, sparsity=sparsity
+        )
+        # process attention output
+        self._dense = DenseWithSparseWeights(units=units, sparsity=sparsity)
 
         self._create_relative_embeddings()
 
@@ -80,12 +90,12 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 
         if self.use_key_relative_position:
             self.key_relative_embeddings = self.add_weight(
-                shape=relative_embedding_shape, name="key_relative_embeddings",
+                shape=relative_embedding_shape, name="key_relative_embeddings"
             )
 
         if self.use_value_relative_position:
             self.value_relative_embeddings = self.add_weight(
-                shape=relative_embedding_shape, name="value_relative_embeddings",
+                shape=relative_embedding_shape, name="value_relative_embeddings"
             )
 
     def _pad_relative_embeddings(self, x: tf.Tensor, length: tf.Tensor) -> tf.Tensor:
@@ -95,12 +105,12 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 
         # pad the right side to length
         if self.unidirectional:
-            m_right = 1  # current time
+            right_relative_length = 1  # current time
             pad_right = tf.zeros_like(x[:, :, :, -1:, :])
         else:
-            m_right = self.relative_length
+            right_relative_length = self.relative_length
             pad_right = x[:, :, :, -1:, :]
-        pad_right = tf.tile(pad_right, (1, 1, 1, length - m_right, 1))
+        pad_right = tf.tile(pad_right, (1, 1, 1, length - right_relative_length, 1))
 
         return tf.concat([pad_left, x, pad_right], axis=-2)
 
@@ -111,9 +121,9 @@ class MultiHeadAttention(tf.keras.layers.Layer):
             pad_right = tf.tile(pad_right, (1, 1, 1, self.relative_length - 1, 1))
             x = tf.concat([x, pad_right], axis=-2)
 
-        dl = self.relative_length - length
-        m = tf.shape(x)[-2]
-        return x[:, :, :, dl : m - dl, :]
+        extra_length = self.relative_length - length
+        full_length = tf.shape(x)[-2]
+        return x[:, :, :, extra_length : full_length - extra_length, :]
 
     def _relative_to_absolute_position(self, x: tf.Tensor) -> tf.Tensor:
         """Universal method to convert tensor from relative to absolute indexing.
@@ -121,7 +131,8 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         x.shape =
         (batch, num_heads, length, relative_length, depth)
         or (batch, num_heads, length, relative_length)
-        "Slides" relative embeddings by 45 degree """
+        "Slides" relative embeddings by 45 degree.
+        """
 
         x_dim = len(x.shape)
 
@@ -294,13 +305,12 @@ class MultiHeadAttention(tf.keras.layers.Layer):
           a Tensor with shape [batch, length, channels]
         """
 
-        x = tf.transpose(
-            x, perm=[0, 2, 1, 3]
-        )  # (batch_size, seq_len_q, num_heads, depth)
-        return tf.reshape(
-            x, (tf.shape(x)[0], -1, self.units)
-        )  # (batch_size, seq_len_q, units)
+        # (batch_size, seq_len_q, num_heads, depth)
+        x = tf.transpose(x, perm=[0, 2, 1, 3])
+        # (batch_size, seq_len_q, units)
+        return tf.reshape(x, (tf.shape(x)[0], -1, self.units))
 
+    # noinspection PyMethodOverriding
     def call(
         self,
         v: tf.Tensor,
@@ -340,6 +350,7 @@ class TransformerEncoderLayer(tf.keras.layers.Layer):
         filter_units: int,
         dropout_rate: float = 0.1,
         attention_dropout_rate: float = 0.0,
+        sparsity: float = 0.8,
         unidirectional: bool = False,
         use_key_relative_position: bool = False,
         use_value_relative_position: bool = False,
@@ -348,11 +359,12 @@ class TransformerEncoderLayer(tf.keras.layers.Layer):
     ) -> None:
         super().__init__()
 
-        self._layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self._layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         self._mha = MultiHeadAttention(
             units,
             num_heads,
             attention_dropout_rate,
+            sparsity,
             unidirectional,
             use_key_relative_position,
             use_value_relative_position,
@@ -364,10 +376,12 @@ class TransformerEncoderLayer(tf.keras.layers.Layer):
         self._ffn_layers = [
             tf.keras.layers.LayerNormalization(epsilon=1e-6),
             DenseWithSparseWeights(
-                units=filter_units, activation=tfa.activations.gelu
+                units=filter_units, activation=tfa.activations.gelu, sparsity=sparsity
             ),  # (batch_size, seq_len, filter_units)
             tf.keras.layers.Dropout(dropout_rate),
-            DenseWithSparseWeights(units=units),  # (batch_size, seq_len, units)
+            DenseWithSparseWeights(
+                units=units, sparsity=sparsity
+            ),  # (batch_size, seq_len, units)
             tf.keras.layers.Dropout(dropout_rate),
         ]
 
@@ -380,7 +394,7 @@ class TransformerEncoderLayer(tf.keras.layers.Layer):
         if training is None:
             training = K.learning_phase()
 
-        x_norm = self._layernorm(x)  # (batch_size, seq_len, units)
+        x_norm = self._layer_norm(x)  # (batch_size, seq_len, units)
         attn_out, _ = self._mha(
             x_norm, x_norm, x_norm, pad_mask=pad_mask, training=training
         )
@@ -402,10 +416,10 @@ class TransformerEncoder(tf.keras.layers.Layer):
         units: int,
         num_heads: int,
         filter_units: int,
-        max_seq_length: int,
         reg_lambda: float,
         dropout_rate: float = 0.1,
         attention_dropout_rate: float = 0.0,
+        sparsity: float = 0.8,
         unidirectional: bool = False,
         use_key_relative_position: bool = False,
         use_value_relative_position: bool = False,
@@ -420,7 +434,7 @@ class TransformerEncoder(tf.keras.layers.Layer):
 
         l2_regularizer = tf.keras.regularizers.l2(reg_lambda)
         self._embedding = DenseWithSparseWeights(
-            units=units, kernel_regularizer=l2_regularizer
+            units=units, kernel_regularizer=l2_regularizer, sparsity=sparsity
         )
         # positional encoding helpers
         self._angles = self._get_angles()
@@ -436,6 +450,7 @@ class TransformerEncoder(tf.keras.layers.Layer):
                 filter_units,
                 dropout_rate,
                 attention_dropout_rate,
+                sparsity,
                 unidirectional,
                 use_key_relative_position,
                 use_value_relative_position,
@@ -444,7 +459,7 @@ class TransformerEncoder(tf.keras.layers.Layer):
             )
             for _ in range(num_layers)
         ]
-        self._layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self._layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
     def _get_angles(self) -> np.ndarray:
         i = np.arange(self.units)[np.newaxis, :]
@@ -455,7 +470,7 @@ class TransformerEncoder(tf.keras.layers.Layer):
         angle_rads = tf.range(max_position)[:, tf.newaxis] * self._angles
 
         # transpose for easy slicing
-        angle_rads = tf.transpose(angle_rads, [1, 0])
+        angle_rads = tf.transpose(angle_rads, perm=[1, 0])
         shape = tf.shape(angle_rads)
         # apply sin to even indices in the array; 2i
         sin_even = tf.sin(tf.gather_nd(angle_rads, self._even_indices))
@@ -464,7 +479,7 @@ class TransformerEncoder(tf.keras.layers.Layer):
         cos_odd = tf.cos(tf.gather_nd(angle_rads, self._odd_indices))
         pos_encoding_odd = tf.scatter_nd(self._odd_indices, cos_odd, shape)
         # combine even and odd positions and transpose back
-        pos_encoding = tf.transpose(pos_encoding_even + pos_encoding_odd, [1, 0])
+        pos_encoding = tf.transpose(pos_encoding_even + pos_encoding_odd, perm=[1, 0])
         # add batch dimension
         return tf.stop_gradient(pos_encoding[tf.newaxis, ...])
 
@@ -479,8 +494,6 @@ class TransformerEncoder(tf.keras.layers.Layer):
         pad_mask: Optional[tf.Tensor] = None,
         training: Optional[Union[tf.Tensor, bool]] = None,
     ) -> tf.Tensor:
-        if training is None:
-            training = K.learning_phase()
 
         # adding embedding and position encoding.
         x = self._embedding(x)  # (batch_size, seq_len, units)
@@ -504,4 +517,4 @@ class TransformerEncoder(tf.keras.layers.Layer):
         # if normalization is done in encoding layers, then it should also be done
         # on the output, since the output can grow very large, being the sum of
         # a whole stack of unnormalized layer outputs.
-        return self._layernorm(x)  # (batch_size, seq_len, units)
+        return self._layer_norm(x)  # (batch_size, seq_len, units)

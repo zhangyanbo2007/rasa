@@ -1,7 +1,0 @@
-language: "en"
-
-pipeline:
-- name: "CountVectorsFeaturizer"
-- name: "DIETClassifier"
-- name: "DucklingHTTPExtractor"
-  url: "http://duckling:8000"

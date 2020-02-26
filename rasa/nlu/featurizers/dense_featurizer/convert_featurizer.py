@@ -1,10 +1,12 @@
 import logging
-from typing import Any, Dict, List, Optional, Text, Tuple
+from typing import Any, Dict, List, Optional, Text, Tuple, Type
 from tqdm import tqdm
 
 from rasa.constants import DOCS_URL_COMPONENTS
 from rasa.nlu.tokenizers.tokenizer import Token
-from rasa.nlu.featurizers.featurizer import Featurizer
+from rasa.nlu.components import Component
+from rasa.nlu.featurizers.featurizer import DenseFeaturizer
+from rasa.nlu.tokenizers.convert_tokenizer import ConveRTTokenizer
 from rasa.nlu.config import RasaNLUModelConfig
 from rasa.nlu.training_data import Message, TrainingData
 from rasa.nlu.constants import (
@@ -16,41 +18,33 @@ from rasa.nlu.constants import (
 import numpy as np
 import tensorflow as tf
 
-from rasa.utils.common import raise_warning
+import rasa.utils.train_utils as train_utils
+import rasa.utils.common as common_utils
 
 logger = logging.getLogger(__name__)
 
 
-class ConveRTFeaturizer(Featurizer):
+class ConveRTFeaturizer(DenseFeaturizer):
+    """Featurizer using ConveRT model.
 
-    provides = [
-        DENSE_FEATURE_NAMES[attribute] for attribute in DENSE_FEATURIZABLE_ATTRIBUTES
-    ]
+    Loads the ConveRT(https://github.com/PolyAI-LDN/polyai-models#convert)
+    model from TFHub and computes sentence and sequence level feature representations
+    for dense featurizable attributes of each message object.
+    """
 
-    requires = [TOKENS_NAMES[attribute] for attribute in DENSE_FEATURIZABLE_ATTRIBUTES]
-
-    def _load_model(self) -> None:
-
-        # needed in order to load model
-        import tensorflow_text
-        import tensorflow_hub as tfhub
-        import os
-
-        model_url = "http://models.poly-ai.com/convert/v1/model.tar.gz"
-        try:
-            self.module = tfhub.load(model_url)
-        except OSError:
-            os.environ["TFHUB_CACHE_DIR"] = "/tmp/tfhub"
-            self.module = tfhub.load(model_url)
-
-        self.sentence_encoding_signature = self.module.signatures["default"]
-        self.sequence_encoding_signature = self.module.signatures["encode_sequence"]
+    @classmethod
+    def required_components(cls) -> List[Type[Component]]:
+        return [ConveRTTokenizer]
 
     def __init__(self, component_config: Optional[Dict[Text, Any]] = None) -> None:
 
         super(ConveRTFeaturizer, self).__init__(component_config)
 
-        self._load_model()
+        model_url = "http://models.poly-ai.com/convert/v1/model.tar.gz"
+        self.module = train_utils.load_tf_hub_model(model_url)
+
+        self.sentence_encoding_signature = self.module.signatures["default"]
+        self.sequence_encoding_signature = self.module.signatures["encode_sequence"]
 
     @classmethod
     def required_packages(cls) -> List[Text]:
@@ -175,7 +169,7 @@ class ConveRTFeaturizer(Featurizer):
     ) -> None:
 
         if config is not None and config.language != "en":
-            raise_warning(
+            common_utils.raise_warning(
                 f"Since ``ConveRT`` model is trained only on an english "
                 f"corpus of conversations, this featurizer should only be "
                 f"used if your training data is in english language. "
@@ -185,16 +179,17 @@ class ConveRTFeaturizer(Featurizer):
 
         batch_size = 64
 
-        for attribute in tqdm(DENSE_FEATURIZABLE_ATTRIBUTES):
+        for attribute in DENSE_FEATURIZABLE_ATTRIBUTES:
 
             non_empty_examples = list(
                 filter(lambda x: x.get(attribute), training_data.training_examples)
             )
 
-            batch_start_index = 0
-
-            while batch_start_index < len(non_empty_examples):
-
+            progress_bar = tqdm(
+                range(0, len(non_empty_examples), batch_size),
+                desc=attribute.capitalize() + " batches",
+            )
+            for batch_start_index in progress_bar:
                 batch_end_index = min(
                     batch_start_index + batch_size, len(non_empty_examples)
                 )
@@ -205,15 +200,12 @@ class ConveRTFeaturizer(Featurizer):
                 batch_features = self._compute_features(batch_examples, attribute)
 
                 for index, ex in enumerate(batch_examples):
-
                     ex.set(
                         DENSE_FEATURE_NAMES[attribute],
                         self._combine_with_existing_dense_features(
                             ex, batch_features[index], DENSE_FEATURE_NAMES[attribute]
                         ),
                     )
-
-                batch_start_index += batch_size
 
     def process(self, message: Message, **kwargs: Any) -> None:
 

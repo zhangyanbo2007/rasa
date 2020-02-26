@@ -1,10 +1,10 @@
 import logging
-from typing import List, Optional, Text, Tuple, Callable, Union
+from typing import List, Optional, Text, Tuple, Callable, Union, Any
 import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import initializers
+from rasa.utils.tensorflow.constants import SOFTMAX, MARGIN, COSINE, INNER
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,7 @@ class SparseDropout(tf.keras.layers.Dropout):
         outputs = tf_utils.smart_cond(
             training, dropped_inputs, lambda: tf.identity(inputs)
         )
+        # need to explicitly set shape, because it becomes dynamic after `retain`
         # noinspection PyProtectedMember
         outputs._dense_shape = inputs._dense_shape
 
@@ -35,9 +36,9 @@ class SparseDropout(tf.keras.layers.Dropout):
 class DenseForSparse(tf.keras.layers.Dense):
     """Dense layer for sparse input tensor."""
 
-    def __init__(self, reg_lambda: float = 0, **kwargs) -> None:
+    def __init__(self, reg_lambda: float = 0, **kwargs: Any) -> None:
         if reg_lambda > 0:
-            regularizer = tf.keras.regularizers.l1(reg_lambda)
+            regularizer = tf.keras.regularizers.l2(reg_lambda)
         else:
             regularizer = None
 
@@ -66,7 +67,7 @@ class DenseForSparse(tf.keras.layers.Dense):
 
 
 class DenseWithSparseWeights(tf.keras.layers.Dense):
-    def __init__(self, sparsity: int = 0.8, **kwargs) -> None:
+    def __init__(self, sparsity: float = 0.8, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.sparsity = sparsity
 
@@ -77,7 +78,9 @@ class DenseWithSparseWeights(tf.keras.layers.Dense):
         kernel_mask = tf.cast(
             tf.greater_equal(kernel_mask, self.sparsity), self.kernel.dtype
         )
-        self.kernel_mask = tf.Variable(initial_value=kernel_mask, trainable=False)
+        self.kernel_mask = tf.Variable(
+            initial_value=kernel_mask, trainable=False, name="kernel_mask"
+        )
 
     def call(self, inputs: tf.Tensor) -> tf.Tensor:
         # set some weights to 0 according to precomputed mask
@@ -93,6 +96,7 @@ class Ffnn(tf.keras.layers.Layer):
         layer_sizes: List[int],
         dropout_rate: float,
         reg_lambda: float,
+        sparsity: float,
         layer_name_suffix: Text,
     ) -> None:
         super().__init__(name=f"ffnn_{layer_name_suffix}")
@@ -103,6 +107,7 @@ class Ffnn(tf.keras.layers.Layer):
             self._ffn_layers.append(
                 DenseWithSparseWeights(
                     units=layer_size,
+                    sparsity=sparsity,
                     activation=tfa.activations.gelu,
                     kernel_regularizer=l2_regularizer,
                     name=f"hidden_layer_{layer_name_suffix}_{i}",
@@ -113,9 +118,6 @@ class Ffnn(tf.keras.layers.Layer):
     def call(
         self, x: tf.Tensor, training: Optional[Union[tf.Tensor, bool]] = None
     ) -> tf.Tensor:
-        if training is None:
-            training = K.learning_phase()
-
         for layer in self._ffn_layers:
             x = layer(x, training=training)
 
@@ -135,10 +137,10 @@ class Embed(tf.keras.layers.Layer):
         super().__init__(name=f"embed_{layer_name_suffix}")
 
         self.similarity_type = similarity_type
-        if self.similarity_type and self.similarity_type not in {"cosine", "inner"}:
+        if self.similarity_type and self.similarity_type not in {COSINE, INNER}:
             raise ValueError(
                 f"Wrong similarity type '{self.similarity_type}', "
-                f"should be 'cosine' or 'inner'"
+                f"should be '{COSINE}' or '{INNER}'."
             )
 
         regularizer = tf.keras.regularizers.l2(reg_lambda)
@@ -151,13 +153,20 @@ class Embed(tf.keras.layers.Layer):
 
     def call(self, x: tf.Tensor) -> tf.Tensor:
         x = self._dense(x)
-        if self.similarity_type == "cosine":
-            x = tf.nn.l2_normalize(x, -1)
+        if self.similarity_type == COSINE:
+            x = tf.nn.l2_normalize(x, axis=-1)
 
         return x
 
 
 class InputMask(tf.keras.layers.Layer):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        self._masking_prob = 0.85
+        self._mask_vector_prob = 0.7
+        self._random_vector_prob = 0.1
+
     def build(self, input_shape: tf.TensorShape) -> None:
         self.mask_vector = self.add_weight(
             shape=(1, 1, input_shape[-1]), name="mask_vector"
@@ -176,9 +185,9 @@ class InputMask(tf.keras.layers.Layer):
             training = K.learning_phase()
 
         lm_mask_prob = tf.random.uniform(tf.shape(mask), 0, 1, mask.dtype) * mask
-        lm_mask_bool = tf.greater_equal(lm_mask_prob, 0.85)
+        lm_mask_bool = tf.greater_equal(lm_mask_prob, self._masking_prob)
 
-        def x_masked():
+        def x_masked() -> tf.Tensor:
             x_random_pad = tf.random.uniform(
                 tf.shape(x), tf.reduce_min(x), tf.reduce_max(x), x.dtype
             ) * (1 - mask)
@@ -198,9 +207,13 @@ class InputMask(tf.keras.layers.Layer):
             other_prob = tf.random.uniform(tf.shape(mask), 0, 1, mask.dtype)
             other_prob = tf.tile(other_prob, (1, 1, x.shape[-1]))
             x_other = tf.where(
-                other_prob < 0.70,
+                other_prob < self._mask_vector_prob,
                 mask_vector,
-                tf.where(other_prob < 0.80, x_shuffle, x),
+                tf.where(
+                    other_prob < self._mask_vector_prob + self._random_vector_prob,
+                    x_shuffle,
+                    x,
+                ),
             )
 
             return tf.where(tf.tile(lm_mask_bool, (1, 1, x.shape[-1])), x_other, x)
@@ -212,16 +225,18 @@ class InputMask(tf.keras.layers.Layer):
 
 
 class CRF(tf.keras.layers.Layer):
-    def __init__(self, num_tags: int, reg_lambda: float, name: Text = None) -> None:
+    def __init__(
+        self, num_tags: int, reg_lambda: float, name: Optional[Text] = None
+    ) -> None:
         super().__init__(name=name)
         self.num_tags = num_tags
-        self.regularizer = tf.keras.regularizers.l1(reg_lambda)
+        self.transition_regularizer = tf.keras.regularizers.l2(reg_lambda)
 
     def build(self, input_shape: tf.TensorShape) -> None:
-        # should be created in `build` to apply random_seed
+        # the weights should be created in `build` to apply random_seed
         self.transition_params = self.add_weight(
             shape=(self.num_tags, self.num_tags),
-            regularizer=self.regularizer,
+            regularizer=self.transition_regularizer,
             name="transitions",
         )
         self.built = True
@@ -256,7 +271,7 @@ class DotProductLoss(tf.keras.layers.Layer):
         use_max_sim_neg: bool,
         neg_lambda: float,
         scale_loss: bool,
-        name: Text = None,
+        name: Optional[Text] = None,
         parallel_iterations: int = 1000,
         same_sampling: bool = False,
     ) -> None:
@@ -277,8 +292,10 @@ class DotProductLoss(tf.keras.layers.Layer):
 
         return tf.reshape(x, (-1, x.shape[-1]))
 
-    def _random_indices(self, batch_size: tf.Tensor, total_candidates: tf.Tensor):
-        def rand_idxs():
+    def _random_indices(
+        self, batch_size: tf.Tensor, total_candidates: tf.Tensor
+    ) -> tf.Tensor:
+        def rand_idxs() -> tf.Tensor:
             """Create random tensor of indices"""
 
             # (1, num_neg)
@@ -289,29 +306,29 @@ class DotProductLoss(tf.keras.layers.Layer):
         if self.same_sampling:
             return tf.tile(rand_idxs(), (batch_size, 1))
 
-        def cond(i, out):
+        def cond(idx: tf.Tensor, out: tf.Tensor) -> tf.Tensor:
             """Condition for while loop"""
-            return i < batch_size
+            return idx < batch_size
 
-        def body(i, out):
+        def body(idx: tf.Tensor, out: tf.Tensor) -> List[tf.Tensor]:
             """Body of the while loop"""
             return [
                 # increment counter
-                i + 1,
+                idx + 1,
                 # add random indices
                 tf.concat([out, rand_idxs()], 0),
             ]
 
         # first tensor already created
-        i1 = tf.constant(1)
+        idx1 = tf.constant(1)
         # create first random array of indices
         out1 = rand_idxs()  # (1, num_neg)
 
         return tf.while_loop(
             cond,
             body,
-            loop_vars=[i1, out1],
-            shape_invariants=[i1.shape, tf.TensorShape([None, self.num_neg])],
+            loop_vars=[idx1, out1],
+            shape_invariants=[idx1.shape, tf.TensorShape([None, self.num_neg])],
             parallel_iterations=self.parallel_iterations,
             back_prop=False,
         )[1]
@@ -332,7 +349,7 @@ class DotProductLoss(tf.keras.layers.Layer):
         Checks that input features are different for positive negative samples.
         """
 
-        pos_labels = tf.expand_dims(target_labels, -2)
+        pos_labels = tf.expand_dims(target_labels, axis=-2)
         neg_labels = self._sample_idxs(tf.shape(target_labels)[0], labels, idxs)
 
         return tf.cast(
@@ -356,7 +373,10 @@ class DotProductLoss(tf.keras.layers.Layer):
         neg_embeds = self._sample_idxs(target_size, embeds_flat, neg_ids)
         bad_negs = self._get_bad_mask(labels_flat, target_labels_flat, neg_ids)
 
+        # check if inputs have sequence dimension
         if len(target_labels.shape) == 3:
+            # tensors were flattened for sampling, reshape back
+            # add sequence dimension if it was present in the inputs
             target_shape = tf.shape(target_labels)
             neg_embeds = tf.reshape(
                 neg_embeds, (target_shape[0], target_shape[1], -1, embeds.shape[-1])
@@ -375,8 +395,8 @@ class DotProductLoss(tf.keras.layers.Layer):
     ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
         """Sample negative examples."""
 
-        pos_inputs_embed = tf.expand_dims(inputs_embed, -2)
-        pos_labels_embed = tf.expand_dims(labels_embed, -2)
+        pos_inputs_embed = tf.expand_dims(inputs_embed, axis=-2)
+        pos_labels_embed = tf.expand_dims(labels_embed, axis=-2)
 
         # sample negative inputs
         neg_inputs_embed, inputs_bad_negs = self._get_negs(inputs_embed, labels, labels)
@@ -397,7 +417,7 @@ class DotProductLoss(tf.keras.layers.Layer):
     def sim(a: tf.Tensor, b: tf.Tensor, mask: Optional[tf.Tensor] = None) -> tf.Tensor:
         """Calculate similarity between given tensors."""
 
-        sim = tf.reduce_sum(a * b, -1)
+        sim = tf.reduce_sum(a * b, axis=-1)
         if mask is not None:
             sim *= tf.expand_dims(mask, 2)
 
@@ -405,7 +425,7 @@ class DotProductLoss(tf.keras.layers.Layer):
 
     @staticmethod
     def confidence_from_sim(sim: tf.Tensor, similarity_type: Text) -> tf.Tensor:
-        if similarity_type == "cosine":
+        if similarity_type == COSINE:
             # clip negative values to zero
             return tf.nn.relu(sim)
         else:
@@ -454,9 +474,11 @@ class DotProductLoss(tf.keras.layers.Layer):
     def _calc_accuracy(sim_pos: tf.Tensor, sim_neg: tf.Tensor) -> tf.Tensor:
         """Calculate accuracy."""
 
-        max_all_sim = tf.reduce_max(tf.concat([sim_pos, sim_neg], -1), -1)
+        max_all_sim = tf.reduce_max(tf.concat([sim_pos, sim_neg], axis=-1), axis=-1)
         return tf.reduce_mean(
-            tf.cast(tf.math.equal(max_all_sim, tf.squeeze(sim_pos, -1)), tf.float32)
+            tf.cast(
+                tf.math.equal(max_all_sim, tf.squeeze(sim_pos, axis=-1)), tf.float32
+            )
         )
 
     def _loss_margin(
@@ -471,35 +493,41 @@ class DotProductLoss(tf.keras.layers.Layer):
         """Define max margin loss."""
 
         # loss for maximizing similarity with correct action
-        loss = tf.maximum(0.0, self.mu_pos - tf.squeeze(sim_pos, -1))
+        loss = tf.maximum(0.0, self.mu_pos - tf.squeeze(sim_pos, axis=-1))
 
         # loss for minimizing similarity with `num_neg` incorrect actions
         if self.use_max_sim_neg:
             # minimize only maximum similarity over incorrect actions
-            max_sim_neg_il = tf.reduce_max(sim_neg_il, -1)
+            max_sim_neg_il = tf.reduce_max(sim_neg_il, axis=-1)
             loss += tf.maximum(0.0, self.mu_neg + max_sim_neg_il)
         else:
             # minimize all similarities with incorrect actions
             max_margin = tf.maximum(0.0, self.mu_neg + sim_neg_il)
-            loss += tf.reduce_sum(max_margin, -1)
+            loss += tf.reduce_sum(max_margin, axis=-1)
 
         # penalize max similarity between pos bot and neg bot embeddings
-        max_sim_neg_ll = tf.maximum(0.0, self.mu_neg + tf.reduce_max(sim_neg_ll, -1))
+        max_sim_neg_ll = tf.maximum(
+            0.0, self.mu_neg + tf.reduce_max(sim_neg_ll, axis=-1)
+        )
         loss += max_sim_neg_ll * self.neg_lambda
 
         # penalize max similarity between pos dial and neg dial embeddings
-        max_sim_neg_ii = tf.maximum(0.0, self.mu_neg + tf.reduce_max(sim_neg_ii, -1))
+        max_sim_neg_ii = tf.maximum(
+            0.0, self.mu_neg + tf.reduce_max(sim_neg_ii, axis=-1)
+        )
         loss += max_sim_neg_ii * self.neg_lambda
 
         # penalize max similarity between pos bot and neg dial embeddings
-        max_sim_neg_li = tf.maximum(0.0, self.mu_neg + tf.reduce_max(sim_neg_li, -1))
+        max_sim_neg_li = tf.maximum(
+            0.0, self.mu_neg + tf.reduce_max(sim_neg_li, axis=-1)
+        )
         loss += max_sim_neg_li * self.neg_lambda
 
         if mask is not None:
             # mask loss for different length sequences
             loss *= mask
             # average the loss over sequence length
-            loss = tf.reduce_sum(loss, -1) / tf.reduce_sum(mask, 1)
+            loss = tf.reduce_sum(loss, axis=-1) / tf.reduce_sum(mask, axis=1)
 
         # average the loss over the batch
         loss = tf.reduce_mean(loss)
@@ -518,7 +546,7 @@ class DotProductLoss(tf.keras.layers.Layer):
         """Define softmax loss."""
 
         logits = tf.concat(
-            [sim_pos, sim_neg_il, sim_neg_ll, sim_neg_ii, sim_neg_li], -1
+            [sim_pos, sim_neg_il, sim_neg_ll, sim_neg_ii, sim_neg_li], axis=-1
         )
 
         # create label_ids for softmax
@@ -534,13 +562,14 @@ class DotProductLoss(tf.keras.layers.Layer):
         if self.scale_loss:
             # mask loss by prediction confidence
             pos_pred = tf.stop_gradient(tf.nn.softmax(logits)[..., 0])
+            # the scaling parameters are found empirically
             scale_mask = mask * tf.pow(tf.minimum(0.5, 1 - pos_pred) / 0.5, 4)
             # scale loss
             loss *= scale_mask
 
         if len(loss.shape) == 2:
             # average over the sequence
-            loss = tf.reduce_sum(loss, -1) / tf.reduce_sum(mask, -1)
+            loss = tf.reduce_sum(loss, axis=-1) / tf.reduce_sum(mask, axis=-1)
 
         # average the loss over all examples
         loss = tf.reduce_mean(loss)
@@ -551,14 +580,14 @@ class DotProductLoss(tf.keras.layers.Layer):
     def _chosen_loss(self) -> Callable:
         """Use loss depending on given option."""
 
-        if self.loss_type == "margin":
+        if self.loss_type == MARGIN:
             return self._loss_margin
-        elif self.loss_type == "softmax":
+        elif self.loss_type == SOFTMAX:
             return self._loss_softmax
         else:
             raise ValueError(
                 f"Wrong loss type '{self.loss_type}', "
-                f"should be 'margin' or 'softmax'"
+                f"should be '{MARGIN}' or '{SOFTMAX}'"
             )
 
     def call(

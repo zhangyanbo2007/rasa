@@ -2,15 +2,16 @@ import logging
 import os
 import re
 import scipy.sparse
-from typing import Any, Dict, List, Optional, Text
+from typing import Any, Dict, List, Optional, Text, Type
 
 from rasa.constants import DOCS_URL_COMPONENTS
-from rasa.utils.common import raise_warning
-
+import rasa.utils.common as common_utils
+import rasa.utils.io as io_utils
 from sklearn.feature_extraction.text import CountVectorizer
-from rasa.nlu import utils
 from rasa.nlu.config import RasaNLUModelConfig
-from rasa.nlu.featurizers.featurizer import Featurizer
+from rasa.nlu.tokenizers.tokenizer import Tokenizer
+from rasa.nlu.components import Component
+from rasa.nlu.featurizers.featurizer import SparseFeaturizer
 from rasa.nlu.model import Metadata
 from rasa.nlu.training_data import Message, TrainingData
 from rasa.nlu.constants import (
@@ -26,7 +27,7 @@ from rasa.nlu.constants import (
 logger = logging.getLogger(__name__)
 
 
-class CountVectorsFeaturizer(Featurizer):
+class CountVectorsFeaturizer(SparseFeaturizer):
     """Creates a sequence of token counts features based on sklearn's `CountVectorizer`.
 
     All tokens which consist only of digits (e.g. 123 and 99
@@ -37,9 +38,9 @@ class CountVectorsFeaturizer(Featurizer):
     from https://arxiv.org/abs/1810.07150.
     """
 
-    provides = [SPARSE_FEATURE_NAMES[attribute] for attribute in MESSAGE_ATTRIBUTES]
-
-    requires = [TOKENS_NAMES[attribute] for attribute in DENSE_FEATURIZABLE_ATTRIBUTES]
+    @classmethod
+    def required_components(cls) -> List[Type[Component]]:
+        return [Tokenizer]
 
     defaults = {
         # whether to use a shared vocab
@@ -292,7 +293,7 @@ class CountVectorsFeaturizer(Featurizer):
 
         if any(text for tokens in all_tokens for text in tokens):
             # if there is some text in tokens, warn if there is no oov token
-            raise_warning(
+            common_utils.raise_warning(
                 f"The out of vocabulary token '{self.OOV_token}' was configured, but "
                 f"could not be found in any one of the NLU message training examples. "
                 f"All unseen words will be ignored during prediction.",
@@ -419,6 +420,11 @@ class CountVectorsFeaturizer(Featurizer):
             if attribute in [TEXT, RESPONSE]:
                 tokens_without_cls = tokens[:-1]
 
+            if not tokens_without_cls:
+                # attribute is not set (e.g. response not present)
+                X.append(None)
+                continue
+
             seq_vec = self.vectorizers[attribute].transform(tokens_without_cls)
             seq_vec.sort_indices()
 
@@ -492,7 +498,6 @@ class CountVectorsFeaturizer(Featurizer):
 
         # transform for all attributes
         for attribute in self._attributes:
-
             attribute_features = self._get_featurized_attribute(
                 attribute, processed_attribute_tokens[attribute]
             )
@@ -568,7 +573,7 @@ class CountVectorsFeaturizer(Featurizer):
                 else:
                     vocab = attribute_vocabularies
 
-                utils.json_pickle(featurizer_file, vocab)
+                io_utils.json_pickle(featurizer_file, vocab)
 
         return {"file": file_name}
 
@@ -642,7 +647,7 @@ class CountVectorsFeaturizer(Featurizer):
         if not os.path.exists(featurizer_file):
             return cls(meta)
 
-        vocabulary = utils.json_unpickle(featurizer_file)
+        vocabulary = io_utils.json_unpickle(featurizer_file)
 
         share_vocabulary = meta["use_shared_vocab"]
 

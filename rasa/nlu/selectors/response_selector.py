@@ -3,11 +3,21 @@ import logging
 import numpy as np
 import tensorflow as tf
 
-from typing import Any, Dict, List, Optional, Text, Tuple, Union
+from typing import Any, Dict, Optional, Text, Tuple, Union, List, Type
 
+from rasa.nlu.config import InvalidConfigError
 from rasa.nlu.training_data import TrainingData, Message
-from rasa.nlu.classifiers.diet_classifier import DIETClassifier, DIET
-from rasa.nlu.components import any_of
+from rasa.nlu.components import Component
+from rasa.nlu.featurizers.featurizer import Featurizer
+from rasa.nlu.classifiers.diet_classifier import (
+    DIETClassifier,
+    DIET,
+    TEXT_FEATURES,
+    LABEL_FEATURES,
+    TEXT_MASK,
+    LABEL_MASK,
+    LABEL_IDS,
+)
 from rasa.utils.tensorflow.constants import (
     LABEL,
     HIDDEN_LAYERS_SIZES,
@@ -15,13 +25,12 @@ from rasa.utils.tensorflow.constants import (
     TRANSFORMER_SIZE,
     NUM_TRANSFORMER_LAYERS,
     NUM_HEADS,
-    MAX_SEQ_LENGTH,
     BATCH_SIZES,
     BATCH_STRATEGY,
     EPOCHS,
     RANDOM_SEED,
     LEARNING_RATE,
-    DENSE_DIM,
+    DENSE_DIMENSION,
     RANKING_LENGTH,
     LOSS_TYPE,
     SIMILARITY_TYPE,
@@ -33,31 +42,33 @@ from rasa.utils.tensorflow.constants import (
     EVAL_NUM_EXAMPLES,
     EVAL_NUM_EPOCHS,
     UNIDIRECTIONAL_ENCODER,
-    DROPRATE,
-    DROPRATE_ATTENTION,
-    NEG_MARGIN_SCALE,
+    DROP_RATE,
+    DROP_RATE_ATTENTION,
+    WEIGHT_SPARSITY,
+    NEGATIVE_MARGIN_SCALE,
     REGULARIZATION_CONSTANT,
     SCALE_LOSS,
-    USE_MAX_SIM_NEG,
-    MU_NEG,
-    MU_POS,
-    EMBED_DIM,
+    USE_MAX_NEG_SIM,
+    MAX_NEG_SIM,
+    MAX_POS_SIM,
+    EMBEDDING_DIMENSION,
     BILOU_FLAG,
     KEY_RELATIVE_ATTENTION,
     VALUE_RELATIVE_ATTENTION,
     MAX_RELATIVE_POSITION,
+    RETRIEVAL_INTENT,
+    SOFTMAX,
+    AUTO,
+    BALANCED,
 )
 from rasa.nlu.constants import (
     RESPONSE,
     RESPONSE_SELECTOR_PROPERTY_NAME,
     DEFAULT_OPEN_UTTERANCE_TYPE,
-    DENSE_FEATURE_NAMES,
     TEXT,
-    SPARSE_FEATURE_NAMES,
 )
 from rasa.utils.tensorflow.model_data import RasaModelData
 from rasa.utils.tensorflow.models import RasaModel
-
 
 logger = logging.getLogger(__name__)
 
@@ -81,107 +92,108 @@ class ResponseSelector(DIETClassifier):
     and additional hidden layers are added together with dropout.
     """
 
-    provides = [RESPONSE, "response_ranking"]
+    @classmethod
+    def required_components(cls) -> List[Type[Component]]:
+        return [Featurizer]
 
-    requires = [
-        any_of(DENSE_FEATURE_NAMES[TEXT], SPARSE_FEATURE_NAMES[TEXT]),
-        any_of(DENSE_FEATURE_NAMES[RESPONSE], SPARSE_FEATURE_NAMES[RESPONSE]),
-    ]
-
-    # default properties (DOC MARKER - don't remove)
     defaults = {
-        # nn architecture
-        # sizes of hidden layers before the embedding layer
-        # for input words and responses
-        # the number of hidden layers is thus equal to the length of this list
-        HIDDEN_LAYERS_SIZES: {TEXT: [], LABEL: []},
-        # Whether to share the hidden layer weights between input words and intent labels
+        # ## Architecture of the used neural network
+        # Hidden layer sizes for layers before the embedding layers for user message
+        # and labels.
+        # The number of hidden layers is equal to the length of the corresponding
+        # list.
+        HIDDEN_LAYERS_SIZES: {TEXT: [256, 128], LABEL: [256, 128]},
+        # Whether to share the hidden layer weights between input words and responses
         SHARE_HIDDEN_LAYERS: False,
-        # number of units in transformer
-        TRANSFORMER_SIZE: 256,
-        # number of transformer layers
-        NUM_TRANSFORMER_LAYERS: 2,
-        # number of attention heads in transformer
+        # Number of units in transformer
+        TRANSFORMER_SIZE: None,
+        # Number of transformer layers
+        NUM_TRANSFORMER_LAYERS: 0,
+        # Number of attention heads in transformer
         NUM_HEADS: 4,
-        # max sequence length if pos_encoding='emb'
-        MAX_SEQ_LENGTH: 256,
-        # training parameters
-        # initial and final batch sizes - batch size will be
-        # linearly increased for each epoch
-        BATCH_SIZES: [64, 256],
-        # how to create batches
-        BATCH_STRATEGY: "balanced",  # string 'sequence' or 'balanced'
-        # number of epochs
-        EPOCHS: 300,
-        # set random seed to any int to get reproducible results
-        RANDOM_SEED: None,
-        # optimizer
-        LEARNING_RATE: 0.001,
-        # embedding parameters
-        # default dense dimension used if no dense features are present
-        DENSE_DIM: {TEXT: 512, LABEL: 512},
-        # dimension size of embedding vectors
-        EMBED_DIM: 20,
-        # the type of the similarity
-        NUM_NEG: 20,
-        # flag if minimize only maximum similarity over incorrect actions
-        SIMILARITY_TYPE: "auto",  # string 'auto' or 'cosine' or 'inner'
-        # the type of the loss function
-        LOSS_TYPE: "softmax",  # string 'softmax' or 'margin'
-        # number of top responses to normalize scores for softmax loss_type
-        # set to 0 to turn off normalization
-        RANKING_LENGTH: 10,
-        # how similar the algorithm should try
-        # to make embedding vectors for correct intent labels
-        MU_POS: 0.8,  # should be 0.0 < ... < 1.0 for 'cosine'
-        # maximum negative similarity for incorrect intent labels
-        MU_NEG: -0.4,  # should be -1.0 < ... < 1.0 for 'cosine'
-        # flag: if true, only minimize the maximum similarity for
-        # incorrect intent labels
-        USE_MAX_SIM_NEG: True,
-        # scale loss inverse proportionally to confidence of correct prediction
-        SCALE_LOSS: True,
-        # regularization parameters
-        # the scale of L2 regularization
-        REGULARIZATION_CONSTANT: 0.002,
-        # the scale of how critical the algorithm should be of minimizing the
-        # maximum similarity between embeddings of different intent labels
-        NEG_MARGIN_SCALE: 0.8,
-        # dropout rate for rnn
-        DROPRATE: 0.2,
-        # dropout rate for attention
-        DROPRATE_ATTENTION: 0,
-        # use a unidirectional or bidirectional encoder
-        UNIDIRECTIONAL_ENCODER: False,
-        # if true apply dropout to sparse tensors
-        SPARSE_INPUT_DROPOUT: True,
-        # visualization of accuracy
-        # how often to calculate training accuracy
-        EVAL_NUM_EPOCHS: 20,  # small values may hurt performance
-        # how many examples to use for calculation of training accuracy
-        EVAL_NUM_EXAMPLES: 0,  # large values may hurt performance,
-        # if true random tokens of the input message will be masked and the model
-        # should predict those tokens
-        MASKED_LM: False,
-        # if true use key relative embeddings in attention
+        # If 'True' use key relative embeddings in attention
         KEY_RELATIVE_ATTENTION: False,
-        # if true use key relative embeddings in attention
+        # If 'True' use key relative embeddings in attention
         VALUE_RELATIVE_ATTENTION: False,
-        # max position for relative embeddings
+        # Max position for relative embeddings
         MAX_RELATIVE_POSITION: None,
-        # selector config
-        # name of the intent for which this response selector is to be trained
-        "retrieval_intent": None,
+        # Use a unidirectional or bidirectional encoder.
+        UNIDIRECTIONAL_ENCODER: False,
+        # ## Training parameters
+        # Initial and final batch sizes:
+        # Batch size will be linearly increased for each epoch.
+        BATCH_SIZES: [64, 256],
+        # Strategy used when creating batches.
+        # Can be either 'sequence' or 'balanced'.
+        BATCH_STRATEGY: BALANCED,
+        # Number of epochs to train
+        EPOCHS: 300,
+        # Set random seed to any 'int' to get reproducible results
+        RANDOM_SEED: None,
+        # Initial learning rate for the optimizer
+        LEARNING_RATE: 0.001,
+        # ## Parameters for embeddings
+        # Dimension size of embedding vectors
+        EMBEDDING_DIMENSION: 20,
+        # Default dense dimension to use if no dense features are present.
+        DENSE_DIMENSION: {TEXT: 512, LABEL: 512},
+        # The number of incorrect labels. The algorithm will minimize
+        # their similarity to the user input during training.
+        NUM_NEG: 20,
+        # Type of similarity measure to use, either 'auto' or 'cosine' or 'inner'.
+        SIMILARITY_TYPE: AUTO,
+        # The type of the loss function, either 'softmax' or 'margin'.
+        LOSS_TYPE: SOFTMAX,
+        # Number of top actions to normalize scores for loss type 'softmax'.
+        # Set to 0 to turn off normalization.
+        RANKING_LENGTH: 10,
+        # Indicates how similar the algorithm should try to make embedding vectors
+        # for correct labels.
+        # Should be 0.0 < ... < 1.0 for 'cosine' similarity type.
+        MAX_POS_SIM: 0.8,
+        # Maximum negative similarity for incorrect labels.
+        # Should be -1.0 < ... < 1.0 for 'cosine' similarity type.
+        MAX_NEG_SIM: -0.4,
+        # If 'True' the algorithm only minimizes maximum similarity over
+        # incorrect intent labels, used only if 'loss_type' is set to 'margin'.
+        USE_MAX_NEG_SIM: True,
+        # Scale loss inverse proportionally to confidence of correct prediction
+        SCALE_LOSS: True,
+        # ## Regularization parameters
+        # The scale of regularization
+        REGULARIZATION_CONSTANT: 0.002,
+        # Sparsity of the weights in dense layers
+        WEIGHT_SPARSITY: 0.8,
+        # The scale of how important is to minimize the maximum similarity
+        # between embeddings of different labels.
+        NEGATIVE_MARGIN_SCALE: 0.8,
+        # Dropout rate for encoder
+        DROP_RATE: 0.2,
+        # Dropout rate for attention
+        DROP_RATE_ATTENTION: 0,
+        # If 'True' apply dropout to sparse tensors
+        SPARSE_INPUT_DROPOUT: False,
+        # ## Evaluation parameters
+        # How often calculate validation accuracy.
+        # Small values may hurt performance, e.g. model accuracy.
+        EVAL_NUM_EPOCHS: 20,
+        # How many examples to use for hold out validation set
+        # Large values may hurt performance, e.g. model accuracy.
+        EVAL_NUM_EXAMPLES: 0,
+        # ## Selector config
+        # If 'True' random tokens of the input message will be masked and the model
+        # should predict those tokens.
+        MASKED_LM: False,
+        # Name of the intent for which this response selector is to be trained
+        RETRIEVAL_INTENT: None,
     }
-    # end default properties (DOC MARKER - don't remove)
 
     def __init__(
         self,
         component_config: Optional[Dict[Text, Any]] = None,
-        inverted_label_dict: Optional[Dict[int, Text]] = None,
-        inverted_tag_dict: Optional[Dict[int, Text]] = None,
+        index_label_id_mapping: Optional[Dict[int, Text]] = None,
+        index_tag_id_mapping: Optional[Dict[int, Text]] = None,
         model: Optional[RasaModel] = None,
-        batch_tuple_sizes: Optional[Dict] = None,
     ) -> None:
 
         component_config = component_config or {}
@@ -189,26 +201,22 @@ class ResponseSelector(DIETClassifier):
         # the following properties cannot be adapted for the ResponseSelector
         component_config[INTENT_CLASSIFICATION] = True
         component_config[ENTITY_RECOGNITION] = False
-        component_config[BILOU_FLAG] = False
+        component_config[BILOU_FLAG] = None
 
         super().__init__(
-            component_config,
-            inverted_label_dict,
-            inverted_tag_dict,
-            model,
-            batch_tuple_sizes,
+            component_config, index_label_id_mapping, index_tag_id_mapping, model
         )
 
     @property
     def label_key(self) -> Text:
-        return "label_ids"
+        return LABEL_IDS
 
     @staticmethod
-    def model_class():
+    def model_class() -> Type[RasaModel]:
         return DIET2DIET
 
     def _load_selector_params(self, config: Dict[Text, Any]) -> None:
-        self.retrieval_intent = config["retrieval_intent"]
+        self.retrieval_intent = config[RETRIEVAL_INTENT]
         if not self.retrieval_intent:
             # retrieval intent was left to its default value
             logger.info(
@@ -225,7 +233,6 @@ class ResponseSelector(DIETClassifier):
     def _set_message_property(
         message: Message, prediction_dict: Dict[Text, Any], selector_key: Text
     ) -> None:
-
         message_selector_properties = message.get(RESPONSE_SELECTOR_PROPERTY_NAME, {})
         message_selector_properties[selector_key] = prediction_dict
         message.set(
@@ -235,23 +242,35 @@ class ResponseSelector(DIETClassifier):
         )
 
     def preprocess_train_data(self, training_data: TrainingData) -> RasaModelData:
-        """Performs sanity checks on training data, extracts encodings for labels
-        and prepares data for training"""
+        """Prepares data for training.
+
+        Performs sanity checks on training data, extracts encodings for labels.
+        """
+
         if self.retrieval_intent:
             training_data = training_data.filter_by_intent(self.retrieval_intent)
 
-        label_id_dict = self._create_label_id_dict(training_data, attribute=RESPONSE)
-        self.inverted_label_dict = {v: k for k, v in label_id_dict.items()}
+        label_id_index_mapping = self._label_id_index_mapping(
+            training_data, attribute=RESPONSE
+        )
+
+        if not label_id_index_mapping:
+            # no labels are present to train
+            return RasaModelData()
+
+        self.index_label_id_mapping = self._invert_mapping(label_id_index_mapping)
 
         self._label_data = self._create_label_data(
-            training_data, label_id_dict, attribute=RESPONSE
+            training_data, label_id_index_mapping, attribute=RESPONSE
         )
 
         model_data = self._create_model_data(
-            training_data.intent_examples, label_id_dict, label_attribute=RESPONSE
+            training_data.intent_examples,
+            label_id_index_mapping,
+            label_attribute=RESPONSE,
         )
 
-        self.check_input_dimension_consistency(model_data)
+        self._check_input_dimension_consistency(model_data)
 
         return model_data
 
@@ -278,20 +297,20 @@ class ResponseSelector(DIETClassifier):
 
 class DIET2DIET(DIET):
     def _check_data(self) -> None:
-        if "text_features" not in self.data_signature:
-            raise ValueError(
+        if TEXT_FEATURES not in self.data_signature:
+            raise InvalidConfigError(
                 f"No text features specified. "
                 f"Cannot train '{self.__class__.__name__}' model."
             )
-        if "label_features" not in self.data_signature:
-            raise ValueError(
+        if LABEL_FEATURES not in self.data_signature:
+            raise InvalidConfigError(
                 f"No label features specified. "
                 f"Cannot train '{self.__class__.__name__}' model."
             )
         if (
             self.config[SHARE_HIDDEN_LAYERS]
-            and self.data_signature["text_features"]
-            != self.data_signature["label_features"]
+            and self.data_signature[TEXT_FEATURES]
+            != self.data_signature[LABEL_FEATURES]
         ):
             raise ValueError(
                 "If hidden layer weights are shared, data signatures "
@@ -324,17 +343,17 @@ class DIET2DIET(DIET):
         self._prepare_label_classification_layers()
 
     def _create_all_labels(self) -> Tuple[tf.Tensor, tf.Tensor]:
-        all_label_ids = self.tf_label_data["label_ids"][0]
+        all_label_ids = self.tf_label_data[LABEL_IDS][0]
 
-        mask_label = self.tf_label_data["label_mask"][0]
+        mask_label = self.tf_label_data[LABEL_MASK][0]
         sequence_lengths_label = self._get_sequence_lengths(mask_label)
 
         label_transformed, _, _, _ = self._create_sequence(
-            self.tf_label_data["label_features"], mask_label, self.label_name
+            self.tf_label_data[LABEL_FEATURES], mask_label, self.label_name
         )
         cls_label = self._last_token(label_transformed, sequence_lengths_label)
 
-        all_labels_embed = self._tf_layers["embed.label"](cls_label)
+        all_labels_embed = self._tf_layers[f"embed.{LABEL}"](cls_label)
 
         return all_label_ids, all_labels_embed
 
@@ -343,7 +362,7 @@ class DIET2DIET(DIET):
     ) -> tf.Tensor:
         tf_batch_data = self.batch_to_model_data_format(batch_in, self.data_signature)
 
-        mask_text = tf_batch_data["text_mask"][0]
+        mask_text = tf_batch_data[TEXT_MASK][0]
         sequence_lengths_text = self._get_sequence_lengths(mask_text)
 
         (
@@ -352,18 +371,18 @@ class DIET2DIET(DIET):
             text_seq_ids,
             lm_mask_bool_text,
         ) = self._create_sequence(
-            tf_batch_data["text_features"],
+            tf_batch_data[TEXT_FEATURES],
             mask_text,
             self.text_name,
             self.config[MASKED_LM],
             sequence_ids=True,
         )
 
-        mask_label = tf_batch_data["label_mask"][0]
+        mask_label = tf_batch_data[LABEL_MASK][0]
         sequence_lengths_label = self._get_sequence_lengths(mask_label)
 
         label_transformed, _, _, _ = self._create_sequence(
-            tf_batch_data["label_features"], mask_label, self.label_name
+            tf_batch_data[LABEL_FEATURES], mask_label, self.label_name
         )
 
         losses = []
@@ -384,9 +403,9 @@ class DIET2DIET(DIET):
         # get _cls_ vector for label classification
         cls_text = self._last_token(text_transformed, sequence_lengths_text)
         cls_label = self._last_token(label_transformed, sequence_lengths_label)
-        label_ids = tf_batch_data["label_ids"][0]
+        label_ids = tf_batch_data[LABEL_IDS][0]
 
-        loss, acc = self._label_loss(cls_text, cls_label, label_ids)
+        loss, acc = self._calculate_label_loss(cls_text, cls_label, label_ids)
         self.response_loss.update_state(loss)
         self.response_acc.update_state(acc)
         losses.append(loss)
@@ -400,11 +419,11 @@ class DIET2DIET(DIET):
             batch_in, self.predict_data_signature
         )
 
-        mask_text = tf_batch_data["text_mask"][0]
+        mask_text = tf_batch_data[TEXT_MASK][0]
         sequence_lengths_text = self._get_sequence_lengths(mask_text)
 
         text_transformed, _, _, _ = self._create_sequence(
-            tf_batch_data["text_features"], mask_text, self.text_name
+            tf_batch_data[TEXT_FEATURES], mask_text, self.text_name
         )
 
         out = {}
@@ -414,12 +433,12 @@ class DIET2DIET(DIET):
 
         # get _cls_ vector for intent classification
         cls = self._last_token(text_transformed, sequence_lengths_text)
-        cls_embed = self._tf_layers["embed.text"](cls)
+        cls_embed = self._tf_layers[f"embed.{TEXT}"](cls)
 
-        sim_all = self._tf_layers["loss.label"].sim(
+        sim_all = self._tf_layers[f"loss.{LABEL}"].sim(
             cls_embed[:, tf.newaxis, :], self.all_labels_embed[tf.newaxis, :, :]
         )
-        scores = self._tf_layers["loss.label"].confidence_from_sim(
+        scores = self._tf_layers[f"loss.{LABEL}"].confidence_from_sim(
             sim_all, self.config[SIMILARITY_TYPE]
         )
         out["i_scores"] = scores

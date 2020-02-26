@@ -38,6 +38,7 @@ install_requires = [
     "numpy~=1.16",
     "scipy~=1.2",
     "tensorflow~=2.1",
+    "tensorflow-addons~=0.8",
     # absl is a tensorflow dependency, but produces double logging before 0.8
     # should be removed once tensorflow requires absl > 0.8 on its own
     "absl-py>=0.8.0",
@@ -54,10 +55,9 @@ install_requires = [
     "python-telegram-bot~=11.0",
     "twilio~=6.0",
     "webexteamssdk~=1.1",
-    "mattermostwrapper~=2.0",
     "rocketchat_API~=0.6.0",
     "colorhash~=1.0",
-    "pika~=1.0.0",
+    "pika~=1.1.0",
     "jsonschema~=3.0",
     "packaging~=19.0",
     "gevent~=1.4",
@@ -85,13 +85,13 @@ install_requires = [
     "SQLAlchemy~=1.3.0",
     "sklearn-crfsuite~=0.3.6",
     "PyJWT~=1.7",
-    "transformers~=2.3.0",
 ]
 
 extras_requires = {
     "test": tests_requires,
     "spacy": ["spacy>=2.1,<2.2"],
-    "convert": ["tensorflow_text~=2.1.0rc0", "tensorflow_hub~=0.7.0"],
+    "convert": ["tensorflow_text>=2.1.0rc0", "tensorflow_hub~=0.7.0"],
+    "transformers": ["transformers~=2.3.0"],
     "mitie": ["mitie"],
     "sql": ["psycopg2~=2.8.2", "SQLAlchemy~=1.3"],
     "kafka": ["kafka-python~=1.4"],

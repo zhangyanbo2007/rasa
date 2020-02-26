@@ -4,6 +4,7 @@ from typing import Any, Text, Union, Optional
 from rasa.nlu.training_data import Message
 from rasa.nlu.components import Component
 from rasa.nlu.constants import SPARSE_FEATURE_NAMES, DENSE_FEATURE_NAMES, TEXT
+from rasa.utils.tensorflow.constants import MEAN_POOLING, MAX_POOLING
 
 
 def sequence_to_sentence_features(
@@ -24,6 +25,10 @@ def sequence_to_sentence_features(
 
 
 class Featurizer(Component):
+    pass
+
+
+class DenseFeaturizer(Featurizer):
     @staticmethod
     def _combine_with_existing_dense_features(
         message: Message,
@@ -36,9 +41,7 @@ class Featurizer(Component):
                 raise ValueError(
                     f"Cannot concatenate dense features as sequence dimension does not "
                     f"match: {len(message.get(feature_name))} != "
-                    f"{len(additional_features)}. "
-                    f"Make sure to set 'return_sequence' to the same value for all your "
-                    f"featurizers."
+                    f"{len(additional_features)}. Message: '{message.text}'."
                 )
 
             return np.concatenate(
@@ -47,6 +50,30 @@ class Featurizer(Component):
         else:
             return additional_features
 
+    @staticmethod
+    def _calculate_cls_vector(
+        features: np.ndarray, pooling_operation: Text
+    ) -> np.ndarray:
+        # take only non zeros feature vectors into account
+        non_zero_features = np.array([f for f in features if f.any()])
+
+        # if features are all zero just return a vector with all zeros
+        if non_zero_features.size == 0:
+            return np.zeros([1, features.shape[-1]])
+
+        if pooling_operation == MEAN_POOLING:
+            return np.mean(non_zero_features, axis=0, keepdims=True)
+        elif pooling_operation == MAX_POOLING:
+            return np.max(non_zero_features, axis=0, keepdims=True)
+        else:
+            raise ValueError(
+                f"Invalid pooling operation specified. Available operations are "
+                f"'{MEAN_POOLING}' or '{MAX_POOLING}', but provided value is "
+                f"'{pooling_operation}'."
+            )
+
+
+class SparseFeaturizer(Featurizer):
     @staticmethod
     def _combine_with_existing_sparse_features(
         message: Message,
@@ -63,31 +90,8 @@ class Featurizer(Component):
                 raise ValueError(
                     f"Cannot concatenate sparse features as sequence dimension does not "
                     f"match: {message.get(feature_name).shape[0]} != "
-                    f"{additional_features.shape[0]}. "
-                    f"Make sure to set 'return_sequence' to the same value for all your "
-                    f"featurizers."
+                    f"{additional_features.shape[0]}. Message: '{message.text}'."
                 )
             return hstack([message.get(feature_name), additional_features])
         else:
             return additional_features
-
-    @staticmethod
-    def _calculate_cls_vector(
-        features: np.ndarray, pooling_operation: Text
-    ) -> np.ndarray:
-        # take only non zeros feature vectors into account
-        non_zero_features = np.array([f for f in features if f.any()])
-
-        # if features are all zero just return a vector with all zeros
-        if non_zero_features.size == 0:
-            return np.zeros([1, features.shape[-1]])
-
-        if pooling_operation == "mean":
-            return np.mean(non_zero_features, axis=0, keepdims=True)
-        elif pooling_operation == "max":
-            return np.max(non_zero_features, axis=0, keepdims=True)
-        else:
-            raise ValueError(
-                f"Invalid pooling operation specified. Available operations are "
-                f"'mean' or 'max', but provided value is '{pooling_operation}'."
-            )

@@ -130,13 +130,7 @@ registered_pipeline_templates = {
         {"name": "SpacyTokenizer"},
         {"name": "SpacyFeaturizer"},
         {"name": "RegexFeaturizer"},
-        {"name": "LexicalSyntacticFeaturizer"},
-        {
-            "name": "DIETClassifier",
-            INTENT_CLASSIFICATION: False,
-            ENTITY_RECOGNITION: True,
-            NUM_TRANSFORMER_LAYERS: 0,
-        },
+        {"name": "CRFEntityExtractor"},
         {"name": "EntitySynonymMapper"},
         {"name": "SklearnIntentClassifier"},
     ],
@@ -144,7 +138,8 @@ registered_pipeline_templates = {
     "supervised_embeddings": [
         {"name": "WhitespaceTokenizer"},
         {"name": "RegexFeaturizer"},
-        {"name": "LexicalSyntacticFeaturizer"},
+        {"name": "CRFEntityExtractor"},
+        {"name": "EntitySynonymMapper"},
         {"name": "CountVectorsFeaturizer"},
         {
             "name": "CountVectorsFeaturizer",
@@ -152,14 +147,12 @@ registered_pipeline_templates = {
             "min_ngram": 1,
             "max_ngram": 4,
         },
-        {"name": "DIETClassifier"},
-        {"name": "EntitySynonymMapper"},
+        {"name": "EmbeddingIntentClassifier"},
     ],
     "pretrained_embeddings_convert": [
         {"name": "ConveRTTokenizer"},
         {"name": "ConveRTFeaturizer"},
-        {"name": "LexicalSyntacticFeaturizer"},
-        {"name": "DIETClassifier"},
+        {"name": "EmbeddingIntentClassifier"},
     ],
 }
 

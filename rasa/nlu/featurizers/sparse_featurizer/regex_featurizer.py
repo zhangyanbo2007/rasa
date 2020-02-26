@@ -1,8 +1,7 @@
 import logging
 import os
 import re
-import typing
-from typing import Any, Dict, List, Optional, Text, Union
+from typing import Any, Dict, List, Optional, Text, Union, Type
 
 import numpy as np
 
@@ -19,19 +18,20 @@ from rasa.nlu.constants import (
     TEXT,
     TOKENS_NAMES,
 )
-from rasa.nlu.featurizers.featurizer import Featurizer
+from rasa.nlu.tokenizers.tokenizer import Tokenizer
+from rasa.nlu.components import Component
+from rasa.nlu.featurizers.featurizer import SparseFeaturizer
 from rasa.nlu.training_data import Message, TrainingData
-from rasa.utils.common import raise_warning
+import rasa.utils.common as common_utils
 from rasa.nlu.model import Metadata
 
 logger = logging.getLogger(__name__)
 
 
-class RegexFeaturizer(Featurizer):
-
-    provides = [SPARSE_FEATURE_NAMES[TEXT]]
-
-    requires = [TOKENS_NAMES[TEXT]]
+class RegexFeaturizer(SparseFeaturizer):
+    @classmethod
+    def required_components(cls) -> List[Type[Component]]:
+        return [Tokenizer]
 
     def __init__(
         self,
@@ -89,7 +89,13 @@ class RegexFeaturizer(Featurizer):
         regexes did match. Furthermore, if the
         message is tokenized, the function will mark all tokens with a dict
         relating the name of the regex to whether it was matched."""
-        tokens = message.get(TOKENS_NAMES[attribute])
+
+        # Attribute not set (e.g. response not present)
+        if not message.get(attribute):
+            return None
+
+        tokens = message.get(TOKENS_NAMES[attribute], [])
+
         if not tokens:
             # nothing to featurize
             return
@@ -134,7 +140,7 @@ class RegexFeaturizer(Featurizer):
         # if it's a list, it should be the elements directly
         if isinstance(lookup_elements, list):
             elements_to_regex = lookup_elements
-            raise_warning(
+            common_utils.raise_warning(
                 f"Directly including lookup tables as a list is deprecated since Rasa "
                 f"1.6.",
                 FutureWarning,

@@ -1,4 +1,4 @@
-# constants - configuration parameters
+# constants for configuration parameters of our tensorflow models
 
 LABEL = "label"
 HIDDEN_LAYERS_SIZES = "hidden_layers_sizes"
@@ -8,32 +8,35 @@ TRANSFORMER_SIZE = "transformer_size"
 NUM_TRANSFORMER_LAYERS = "number_of_transformer_layers"
 NUM_HEADS = "number_of_attention_heads"
 UNIDIRECTIONAL_ENCODER = "unidirectional_encoder"
+KEY_RELATIVE_ATTENTION = "use_key_relative_attention"
+VALUE_RELATIVE_ATTENTION = "use_value_relative_attention"
+MAX_RELATIVE_POSITION = "max_relative_position"
 
-MAX_SEQ_LENGTH = "maximum_sequence_length"
-
-BATCH_SIZES = "batch_sizes"
+BATCH_SIZES = "batch_size"
 BATCH_STRATEGY = "batch_strategy"
 EPOCHS = "epochs"
 RANDOM_SEED = "random_seed"
 LEARNING_RATE = "learning_rate"
 
-DENSE_DIM = "dense_dimension"
-EMBED_DIM = "embedding_dimension"
+DENSE_DIMENSION = "dense_dimension"
+EMBEDDING_DIMENSION = "embedding_dimension"
 
 SIMILARITY_TYPE = "similarity_type"
 LOSS_TYPE = "loss_type"
 NUM_NEG = "number_of_negative_examples"
-MU_POS = "maximum_positive_similarity"
-MU_NEG = "maximum_negative_similarity"
-USE_MAX_SIM_NEG = "use_maximum_negative_similarity"
+MAX_POS_SIM = "maximum_positive_similarity"
+MAX_NEG_SIM = "maximum_negative_similarity"
+USE_MAX_NEG_SIM = "use_maximum_negative_similarity"
 
 SCALE_LOSS = "scale_loss"
 REGULARIZATION_CONSTANT = "regularization_constant"
-NEG_MARGIN_SCALE = "neg_margin_scale"
-DROPRATE = "droprate"
-DROPRATE_ATTENTION = "droprate_attention"
-DROPRATE_DIALOGUE = "droprate_dialogue"
-DROPRATE_LABEL = "droprate_label"
+NEGATIVE_MARGIN_SCALE = "negative_margin_scale"
+DROP_RATE = "drop_rate"
+DROP_RATE_ATTENTION = "drop_rate_attention"
+DROP_RATE_DIALOGUE = "drop_rate_dialogue"
+DROP_RATE_LABEL = "drop_rate_label"
+
+WEIGHT_SPARSITY = "weight_sparsity"
 
 EVAL_NUM_EPOCHS = "evaluate_every_number_of_epochs"
 EVAL_NUM_EXAMPLES = "evaluate_on_number_of_examples"
@@ -48,6 +51,17 @@ RANKING_LENGTH = "ranking_length"
 
 BILOU_FLAG = "BILOU_flag"
 
-KEY_RELATIVE_ATTENTION = "use_key_relative_attention"
-VALUE_RELATIVE_ATTENTION = "use_value_relative_attention"
-MAX_RELATIVE_POSITION = "max_relative_position"
+RETRIEVAL_INTENT = "retrieval_intent"
+
+SOFTMAX = "softmax"
+MARGIN = "margin"
+AUTO = "auto"
+INNER = "inner"
+COSINE = "cosine"
+
+BALANCED = "balanced"
+SEQUENCE = "sequence"
+
+POOLING = "pooling"
+MAX_POOLING = "max"
+MEAN_POOLING = "mean"

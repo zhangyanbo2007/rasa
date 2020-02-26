@@ -1,39 +1,37 @@
 import numpy as np
 import typing
-from typing import Any, List, Text, Optional, Dict
+from typing import Any, List, Text, Optional, Dict, Type
 
 from rasa.nlu.config import RasaNLUModelConfig
-from rasa.nlu.featurizers.featurizer import Featurizer
-from rasa.nlu.tokenizers.tokenizer import Token
+from rasa.nlu.components import Component
+from rasa.nlu.featurizers.featurizer import DenseFeaturizer
+from rasa.nlu.tokenizers.tokenizer import Token, Tokenizer
+from rasa.nlu.utils.mitie_utils import MitieNLP
 from rasa.nlu.training_data import Message, TrainingData
+from rasa.nlu.constants import (
+    TEXT,
+    TOKENS_NAMES,
+    DENSE_FEATURE_NAMES,
+    DENSE_FEATURIZABLE_ATTRIBUTES,
+)
+from rasa.utils.tensorflow.constants import MEAN_POOLING, POOLING
 
 if typing.TYPE_CHECKING:
     import mitie
 
-from rasa.nlu.constants import (
-    TEXT,
-    TOKENS_NAMES,
-    MESSAGE_ATTRIBUTES,
-    DENSE_FEATURE_NAMES,
-    DENSE_FEATURIZABLE_ATTRIBUTES,
-)
 
-
-class MitieFeaturizer(Featurizer):
-
-    provides = [DENSE_FEATURE_NAMES[attribute] for attribute in MESSAGE_ATTRIBUTES]
-
-    requires = [TOKENS_NAMES[attribute] for attribute in MESSAGE_ATTRIBUTES] + [
-        "mitie_feature_extractor"
-    ]
+class MitieFeaturizer(DenseFeaturizer):
+    @classmethod
+    def required_components(cls) -> List[Type[Component]]:
+        return [MitieNLP, Tokenizer]
 
     defaults = {
         # Specify what pooling operation should be used to calculate the vector of
         # the CLS token. Available options: 'mean' and 'max'
-        "pooling": "mean"
+        POOLING: MEAN_POOLING
     }
 
-    def __init__(self, component_config: Optional[Dict[Text, Any]] = None):
+    def __init__(self, component_config: Optional[Dict[Text, Any]] = None) -> None:
         super().__init__(component_config)
 
         self.pooling_operation = self.component_config["pooling"]

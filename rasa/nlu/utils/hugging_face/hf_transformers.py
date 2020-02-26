@@ -9,14 +9,6 @@ from rasa.nlu.tokenizers.tokenizer import Token
 import rasa.utils.train_utils as train_utils
 import numpy as np
 
-from rasa.nlu.utils.hugging_face.registry import (
-    model_class_dict,
-    model_tokenizer_dict,
-    model_weights_defaults,
-    model_special_tokens_pre_processors,
-    model_embeddings_post_processors,
-    model_tokens_cleaners,
-)
 from rasa.nlu.constants import (
     TEXT,
     LANGUAGE_MODEL_DOCS,
@@ -31,9 +23,13 @@ logger = logging.getLogger(__name__)
 
 
 class HFTransformersNLP(Component):
-    provides = [
-        LANGUAGE_MODEL_DOCS[attribute] for attribute in DENSE_FEATURIZABLE_ATTRIBUTES
-    ]
+    """Utility Component for interfacing between Transformers library.
+
+    The transformers(https://github.com/huggingface/transformers) library
+    is used to load pre-trained language models like BERT, GPT-2, etc.
+    The component also tokenizes and featurizes dense featurizable attributes of each
+    message.
+    """
 
     defaults = {
         # name of the language model to load.
@@ -42,8 +38,7 @@ class HFTransformersNLP(Component):
         "model_weights": None,
     }
 
-    def __init__(self, component_config: Dict[Text, Any] = None) -> None:
-
+    def __init__(self, component_config: Optional[Dict[Text, Any]] = None) -> None:
         super(HFTransformersNLP, self).__init__(component_config)
 
         self._load_model()
@@ -52,15 +47,18 @@ class HFTransformersNLP(Component):
     def _load_model(self) -> None:
         """Try loading the model"""
 
+        from rasa.nlu.utils.hugging_face.registry import (
+            model_class_dict,
+            model_weights_defaults,
+            model_tokenizer_dict,
+        )
+
         self.model_name = self.component_config["model_name"]
 
         if self.model_name not in model_class_dict:
-            logger.error(
-                f"'{self.model_name}' not a valid model name. Choose from {str(list(model_class_dict.keys()))} or create"
-                f"a new class inheriting from this class to support your model."
-            )
             raise KeyError(
-                f"'{self.model_name}' not a valid model name. Choose from {str(list(model_class_dict.keys()))}or create"
+                f"'{self.model_name}' not a valid model name. Choose from "
+                f"{str(list(model_class_dict.keys()))}or create"
                 f"a new class inheriting from this class to support your model."
             )
 
@@ -68,11 +66,13 @@ class HFTransformersNLP(Component):
 
         if not self.model_weights:
             logger.info(
-                f"Model weights not specified. Will choose default model weights: {model_weights_defaults[self.model_name]}"
+                f"Model weights not specified. Will choose default model weights: "
+                f"{model_weights_defaults[self.model_name]}"
             )
             self.model_weights = model_weights_defaults[self.model_name]
 
         logger.debug(f"Loading Tokenizer and Model for {self.model_name}")
+
         self.tokenizer = model_tokenizer_dict[self.model_name].from_pretrained(
             self.model_weights
         )
@@ -80,10 +80,12 @@ class HFTransformersNLP(Component):
             self.model_weights
         )
 
-        # Use a universal pad token since all transformer architectures do not have a consistent token.
-        # Instead of pad_token_id we use unk_token_id because pad_token_id is not set for all architectures.
-        # We can't add a new token as well since vocabulary resizing is not yet supported for TF classes.
-        # Also, this does not hurt the model predictions since we use an attention mask while feeding input.
+        # Use a universal pad token since all transformer architectures do not have a
+        # consistent token. Instead of pad_token_id we use unk_token_id because
+        # pad_token_id is not set for all architectures. We can't add a new token as
+        # well since vocabulary resizing is not yet supported for TF classes.
+        # Also, this does not hurt the model predictions since we use an attention mask
+        # while feeding input.
         self.pad_token_id = self.tokenizer.unk_token_id
 
     @classmethod
@@ -91,7 +93,6 @@ class HFTransformersNLP(Component):
         return ["transformers"]
 
     def _lm_tokenize(self, text: Text) -> Tuple[List[int], List[Text]]:
-
         split_token_ids = self.tokenizer.encode(text, add_special_tokens=False)
 
         split_token_strings = self.tokenizer.convert_ids_to_tokens(split_token_ids)
@@ -101,6 +102,9 @@ class HFTransformersNLP(Component):
     def _add_lm_specific_special_tokens(
         self, token_ids: List[List[int]]
     ) -> List[List[int]]:
+        from rasa.nlu.utils.hugging_face.registry import (
+            model_special_tokens_pre_processors,
+        )
 
         augmented_tokens = [
             model_special_tokens_pre_processors[self.model_name](example_token_ids)
@@ -109,11 +113,17 @@ class HFTransformersNLP(Component):
         return augmented_tokens
 
     def _lm_specific_token_cleanup(self, token_strings: List[Text]) -> List[Text]:
+        from rasa.nlu.utils.hugging_face.registry import model_tokens_cleaners
+
         return model_tokens_cleaners[self.model_name](token_strings)
 
     def _post_process_sequence_embeddings(
-        self, sequence_embeddings: np.array
-    ) -> Tuple[np.array, np.array]:
+        self, sequence_embeddings: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+
+        from rasa.nlu.utils.hugging_face.registry import (
+            model_embeddings_post_processors,
+        )
 
         sentence_embeddings = []
         post_processed_sequence_embeddings = []
@@ -143,17 +153,15 @@ class HFTransformersNLP(Component):
         token_ids_out = []
 
         for token in tokens_in:
-            token_start, token_end, token_text = token.start, token.end, token.text
-
             # use lm specific tokenizer to further tokenize the text
-            split_token_ids, split_token_strings = self._lm_tokenize(token_text)
+            split_token_ids, split_token_strings = self._lm_tokenize(token.text)
 
             split_token_strings = self._lm_specific_token_cleanup(split_token_strings)
 
             token_ids_out += split_token_ids
 
             tokens_out += train_utils.align_tokens(
-                split_token_strings, token_end, token_start
+                split_token_strings, token.end, token.start
             )
 
         return tokens_out, token_ids_out
@@ -175,15 +183,17 @@ class HFTransformersNLP(Component):
         return batch_tokens, batch_token_ids
 
     @staticmethod
-    def _compute_attention_mask(actual_sequence_lengths: List[int]) -> np.array:
+    def _compute_attention_mask(actual_sequence_lengths: List[int]) -> np.ndarray:
 
         attention_mask = []
         max_seq_length = max(actual_sequence_lengths)
-        for index in range(len(actual_sequence_lengths)):
-            example_seq_length = actual_sequence_lengths[index]
-            attention_mask.append(
-                [1] * example_seq_length + [0] * (max_seq_length - example_seq_length)
+        for actual_sequence_length in actual_sequence_lengths:
+            # add 1s for present tokens, fill up the remaining space up to max
+            # sequence length with 0s (non-existing tokens)
+            padded_sequence = [1] * actual_sequence_length + [0] * (
+                max_seq_length - actual_sequence_length
             )
+            attention_mask.append(padded_sequence)
 
         attention_mask = np.array(attention_mask).astype(np.float32)
 
@@ -196,12 +206,15 @@ class HFTransformersNLP(Component):
         # Compute max length across examples
         max_seq_len = 0
         actual_sequence_lengths = []
+
         for example_token_ids in batch_token_ids:
             actual_sequence_lengths.append(len(example_token_ids))
             max_seq_len = max(max_seq_len, len(example_token_ids))
+
         # Add padding according to max_seq_len
-        # Some models don't contain pad token, we use unknown token as padding token.This doesn't affect the computation
-        # since we compute an attention mask anyways.
+        # Some models don't contain pad token, we use unknown token as padding token.
+        # This doesn't affect the computation since we compute an attention mask
+        # anyways.
         for example_token_ids in batch_token_ids:
             padded_token_ids.append(
                 example_token_ids
@@ -211,9 +224,8 @@ class HFTransformersNLP(Component):
 
     @staticmethod
     def _extract_nonpadded_embeddings(
-        embeddings: np.array, actual_sequence_lengths: List[int]
-    ):
-
+        embeddings: np.ndarray, actual_sequence_lengths: List[int]
+    ) -> np.ndarray:
         nonpadded_sequence_embeddings = []
         for index, embedding in enumerate(embeddings):
             unmasked_embedding = embedding[: actual_sequence_lengths[index]]
@@ -222,9 +234,8 @@ class HFTransformersNLP(Component):
         return np.array(nonpadded_sequence_embeddings)
 
     def _compute_batch_sequence_features(
-        self, batch_attention_mask: np.array, padded_token_ids: List[List[int]]
-    ) -> np.array:
-
+        self, batch_attention_mask: np.ndarray, padded_token_ids: List[List[int]]
+    ) -> np.ndarray:
         model_outputs = self.model(
             np.array(padded_token_ids), attention_mask=np.array(batch_attention_mask)
         )
@@ -237,8 +248,7 @@ class HFTransformersNLP(Component):
 
     def _get_model_features_for_batch(
         self, batch_token_ids: List[List[int]]
-    ) -> Tuple[np.array, np.array]:
-
+    ) -> Tuple[np.ndarray, np.ndarray]:
         # Let's first add tokenizer specific special tokens to all examples
         batch_token_ids_augmented = self._add_lm_specific_special_tokens(
             batch_token_ids
@@ -283,7 +293,8 @@ class HFTransformersNLP(Component):
             batch_sequence_features,
         ) = self._get_model_features_for_batch(batch_token_ids)
 
-        # A doc consists of {'token_ids': ..., 'tokens': ..., 'sequence_features': ..., 'sentence_features': ...}
+        # A doc consists of
+        # {'token_ids': ..., 'tokens': ..., 'sequence_features': ..., 'sentence_features': ...}
         batch_docs = []
         for index in range(len(batch_examples)):
             doc = {

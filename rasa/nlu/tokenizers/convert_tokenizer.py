@@ -9,8 +9,12 @@ import tensorflow as tf
 
 
 class ConveRTTokenizer(WhitespaceTokenizer):
+    """Tokenizer using ConveRT model.
 
-    provides = [TOKENS_NAMES[attribute] for attribute in MESSAGE_ATTRIBUTES]
+    Loads the ConveRT(https://github.com/PolyAI-LDN/polyai-models#convert)
+    model from TFHub and computes sub-word tokens for dense
+    featurizable attributes of each message object.
+    """
 
     defaults = {
         # Flag to check whether to split intents
@@ -26,22 +30,8 @@ class ConveRTTokenizer(WhitespaceTokenizer):
 
         super().__init__(component_config)
 
-        self._load_tokenizer_params()
-
-    def _load_tokenizer_params(self):
-
-        # needed to load the ConveRT model
-        import tensorflow_text
-        import tensorflow_hub as tfhub
-        import os
-
         model_url = "http://models.poly-ai.com/convert/v1/model.tar.gz"
-
-        try:
-            self.module = tfhub.load(model_url)
-        except OSError:
-            os.environ["TFHUB_CACHE_DIR"] = "/tmp/tfhub"
-            self.module = tfhub.load(model_url)
+        self.module = train_utils.load_tf_hub_model(model_url)
 
         self.tokenize_signature = self.module.signatures["tokenize"]
 
