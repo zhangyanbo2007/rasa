@@ -135,7 +135,7 @@ class TrackerWithCachedStates(DialogueStateTracker):
 
             self._append_current_state()
 
-        # TO GET RID OF REPEATING USER UTTERANCES;
+        #TO GET RID OF REPEATING USER UTTERANCES;
         # if isinstance(event, ActionExecuted):
         #     if self._states:
         #         current_intent = [
@@ -565,7 +565,6 @@ class TrainingDataGenerator:
                 ):
                     end_trackers.append(tracker.copy(tracker.sender_id))
                 tracker.update(event)
-
         # end trackers should be returned separately
         # to avoid using them for augmentation
         return trackers, end_trackers
