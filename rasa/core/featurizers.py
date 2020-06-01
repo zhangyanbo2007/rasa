@@ -8,6 +8,7 @@ from typing import Tuple, List, Optional, Dict, Text, Any
 from scipy.sparse import csr_matrix
 import re
 import string
+import pickle
 
 import rasa.utils.io
 from rasa.core import utils
@@ -29,7 +30,11 @@ from rasa.nlu.constants import (
     DENSE_FEATURE_NAMES,
     RESPONSE,
     TEXT,
+    ENTITIES,
+    NO_ENTITY_TAG,
 )
+from rasa.nlu.test import determine_token_labels
+from rasa.utils.tensorflow.constants import ENTITY_RECOGNITION
 from rasa.nlu.training_data import Message, TrainingData
 from rasa.utils.common import is_logging_disabled
 from rasa.utils import train_utils
@@ -39,7 +44,6 @@ logger = logging.getLogger(__name__)
 
 class SingleStateFeaturizer:
     """Base class for mechanisms to transform the conversations state into ML formats.
-
     Subclasses of SingleStateFeaturizer decide how the bot will transform
     the conversation state to a format which a classifier can read:
     feature vector.
@@ -97,7 +101,6 @@ class E2ESingleStateFeaturizer(SingleStateFeaturizer):
     ) -> Tuple[Optional[scipy.sparse.spmatrix], Optional[np.ndarray]]:
         sparse_features = None
         dense_features = None
-
         if message.get(SPARSE_FEATURE_NAMES[attribute]) is not None:
             sparse_features = message.get(SPARSE_FEATURE_NAMES[attribute])
 
@@ -148,7 +151,6 @@ class E2ESingleStateFeaturizer(SingleStateFeaturizer):
     ):
         """
         Encode the state into a numpy array or a sparse sklearn
-
         Args:
             - state: dictionary describing current state, state represented as a dicitonary {text: Event}, where Event is UserUttered/ActionExecuted
             - type output: type to return the features as (numpyarray or sklearn coo_matrix)
@@ -172,25 +174,50 @@ class E2ESingleStateFeaturizer(SingleStateFeaturizer):
             sparse_state, dense_state = self.combine_state_features(
             state_extracted_features
         )
+        entity_features = np.zeros(len(self.interpreter.entities))
+        if "user" in list(state.keys()):
+            if not state["user"].get("entities") is None:
+                user_entities = [
+                    entity["entity"] for entity in state["user"].get("entities")
+                ]
+                for entity_name in user_entities:
+                    entity_features[self.interpreter.entities.index(entity_name)] = 1
 
 
         if self.interpreter.entities == []:
             entity_features = None
+            per_word_entities = None
         else:
             entity_features = np.zeros(len(self.interpreter.entities))
             if "user" in list(state.keys()):
-                if not state["user"].get("entities") is None:
+                if not state["user"].get(ENTITIES) is None:
                     user_entities = [
-                        entity["entity"] for entity in state["user"].get("entities")
+                        entity["entity"] for entity in state["user"].get(ENTITIES)
                     ]
                     for entity_name in user_entities:
                         entity_features[
                             self.interpreter.entities.index(entity_name)
                         ] = 1
+
+            if kwargs.get(ENTITY_RECOGNITION)==True:
+                if state.get('user') is not None:
+                    per_word_entities = np.zeros(len(state["user"].get('tokens')))
+                    if not state["user"].get(ENTITIES) is None:
+                        entities = state["user"].get(ENTITIES)
+                        for j, t in enumerate(state["user"].get('tokens')):
+                            _t = determine_token_labels(t, entities, None)
+                            if not _t == NO_ENTITY_TAG:
+                                per_word_entities[j] = self.interpreter.entities.index(_t)+1
+
+                else:
+                    per_word_entities = np.zeros(2)
+            else:
+                per_word_entities = None
+
         if kwargs.get('hierarchical'):
-            return sparse_user_features, sparse_bot_features, dense_user_features, dense_bot_features, entity_features
+            return sparse_user_features, sparse_bot_features, dense_user_features, dense_bot_features, entity_features, per_word_entities
         else:
-            return sparse_state, dense_state, entity_features
+            return sparse_state, dense_state, entity_features, per_word_entities
 
     def create_encoded_all_actions(self, domain, kwargs):
         label_data = [
@@ -219,7 +246,6 @@ class TrackerFeaturizer:
         is_binary_training: bool = False,
     ) -> List[Dict[Text, float]]:
         """Create states: a list of dictionaries.
-
         If use_intent_probabilities is False (default behaviour),
         pick the most probable intent out of all provided ones and
         set its probability to 1.0, while all the others to 0.0.
@@ -277,13 +303,17 @@ class TrackerFeaturizer:
                 for event in state:
                     if isinstance(event, UserUttered):
                         if not event.message is None:
+                            # setting intent to text so that it is consistent with diet training
+                            # event.message.set('intent', event.message.text)
                             state_dict["user"] = event.message
                     elif isinstance(event, ActionExecuted):
                         if event.message is not None:
+                            # setting intent to text so that it is consistent with diet training
                             state_dict["prev_action"] = event.message
                         # to turn the default actions such as action_listen into Message;
                         else:
                             state_dict["prev_action"] = Message(event.action_name)
+                            # state_dict["prev_action"].set('intent', event.action_name)
                     state_dict["slots"] = self.collect_slots(tr)
             else:
                 state_dict = {}
@@ -387,7 +417,6 @@ class TrackerFeaturizer:
         self.state_featurizer.interpreter.prepare_training_data_and_train(
             trackers_as_states, trackers_as_actions, kwargs["output_path_nlu"], domain
         )
-
         # noinspection PyPep8Naming
         X, true_lengths = self._featurize_states(trackers_as_states, kwargs)
         y = self._featurize_labels(trackers_as_actions, domain, kwargs)
@@ -431,12 +460,15 @@ class TrackerFeaturizer:
                 :-1
             ]
 
-        elif isinstance(self.state_featurizer.interpreter.trainer.pipeline[0], rasa.nlu.utils.spacy_utils.SpacyNLP):
+        if isinstance(
+            self.state_featurizer.interpreter.trainer.pipeline[-1],
+            rasa.nlu.classifiers.diet_classifier.DIETClassifier,
+        ):
             self.state_featurizer.interpreter.trainer.pipeline = self.state_featurizer.interpreter.trainer.pipeline[
-                1:
+                :-1
             ]
             self.state_featurizer.interpreter.interpreter.pipeline = self.state_featurizer.interpreter.interpreter.pipeline[
-                1:
+                :-1
             ]
 
         # noinspection PyTypeChecker
@@ -459,7 +491,6 @@ class TrackerFeaturizer:
 
 class FullDialogueTrackerFeaturizer(TrackerFeaturizer):
     """Creates full dialogue training data for time distributed architectures.
-
     Creates training data that uses each time output for prediction.
     Training data is padded up to the length of the longest dialogue with -1.
     """
@@ -494,7 +525,6 @@ class FullDialogueTrackerFeaturizer(TrackerFeaturizer):
         self, trackers: List[DialogueStateTracker], domain: Domain
     ) -> Tuple[List[List[Dict]], List[List[Text]]]:
         """Transforms list of trackers to lists of states and actions.
-
         Training data is padded up to the length of the longest dialogue with -1.
         """
 
@@ -555,7 +585,6 @@ class FullDialogueTrackerFeaturizer(TrackerFeaturizer):
 
 class MaxHistoryTrackerFeaturizer(TrackerFeaturizer):
     """Slices the tracker history into max_history batches.
-
     Creates training data that uses last output for prediction.
     Training data is padded up to the max_history with -1.
     """
@@ -579,7 +608,6 @@ class MaxHistoryTrackerFeaturizer(TrackerFeaturizer):
         states: List[Dict[Text, float]], slice_length: int
     ) -> List[Optional[Dict[Text, float]]]:
         """Slices states from the trackers history.
-
         If the slice is at the array borders, padding will be added to ensure
         the slice length.
         """
@@ -604,12 +632,14 @@ class MaxHistoryTrackerFeaturizer(TrackerFeaturizer):
         frozen_actions = (action,)
         return hash((frozen_states, frozen_actions))
 
+
     def training_states_and_actions_e2e(
         self, trackers: List[DialogueStateTracker], domain: Domain
     ) -> Tuple[List[List[Optional[Dict[Text, float]]]], List[List[Text]]]:
         trackers_as_states_e2e = []
         trackers_as_actions_e2e = []
         hashed_examples = set()
+
         pbar = tqdm(
             trackers, desc="Processed trackers e2e", disable=is_logging_disabled()
         )
@@ -669,7 +699,6 @@ class MaxHistoryTrackerFeaturizer(TrackerFeaturizer):
         self, trackers: List[DialogueStateTracker], domain: Domain
     ) -> Tuple[List[List[Optional[Dict[Text, float]]]], List[List[Text]]]:
         """Transforms list of trackers to lists of states and actions.
-
         Training data is padded up to the max_history with -1.
         """
 
@@ -734,6 +763,7 @@ class MaxHistoryTrackerFeaturizer(TrackerFeaturizer):
         # self.state_featurizer.interpreter.interpreter = Interpreter(
         #     self.state_featurizer.interpreter.trainer.pipeline, []
         # ).load(os.path.join(os.path.dirname(self.path), "nlu"))
+
 
         trackers_as_states_modified = []
         for tracker in trackers_as_states:

@@ -26,6 +26,7 @@ from rasa.core.trackers import DialogueStateTracker
 from rasa.utils import train_utils
 from rasa.utils.tensorflow import layers
 from rasa.utils.tensorflow.transformer import TransformerEncoder
+from rasa.nlu.constants import ENTITIES
 from rasa.utils.tensorflow.models import RasaModel
 from rasa.utils.tensorflow.model_data import RasaModelData, FeatureSignature
 from rasa.utils.tensorflow.constants import (
@@ -827,7 +828,6 @@ class TED(RasaModel):
 class HierarchicalTEDPolicy(Policy):
     """Transformer Embedding Dialogue (TED) Policy is described in
     https://arxiv.org/abs/1910.00486.
-
     This policy has a pre-defined architecture, which comprises the
     following steps:
         - concatenate user input (user intent and entities), previous system actions,
@@ -929,7 +929,7 @@ class HierarchicalTEDPolicy(Policy):
         # How many examples to use for hold out validation set
         # Large values may hurt performance, e.g. model accuracy.
         EVAL_NUM_EXAMPLES: 0,
-        ENTITY_RECOGNITION: True
+        ENTITY_RECOGNITION: False
     }
 
     @staticmethod
@@ -974,7 +974,6 @@ class HierarchicalTEDPolicy(Policy):
     @staticmethod
     def _label_ids_for_Y(data_Y: np.ndarray) -> np.ndarray:
         """Prepare Y data for training: extract label_ids.
-
         label_ids are indices of labels, while `data_Y` contains one-hot encodings.
         """
 
@@ -1004,20 +1003,23 @@ class HierarchicalTEDPolicy(Policy):
             Y_dense = np.stack(
                 [all_label_features[1][label_idx] for label_idx in label_ids]
             )
+            label_lengths = np.array([all_label_features[0][label_idx].shape[0] for label_idx in label_ids])
         elif len(all_label_features) == 1:
             if isinstance(all_label_features[0][0], scipy.sparse.spmatrix):
                 Y_sparse = np.array(
                     [all_label_features[0][label_idx] for label_idx in label_ids]
                 )
                 Y_dense = np.array([])
+                label_lengths = np.array([all_label_features[0][label_idx].shape[0] for label_idx in label_ids])
             elif isinstance(all_label_features[0][0], np.ndarray):
                 Y_sparse = np.array([])
                 Y_dense = np.array(
                     [all_label_features[1][label_idx] for label_idx in label_ids]
                 )
+                label_lengths = np.array([all_label_features[1][label_idx].shape[0] for label_idx in label_ids])
 
         # max history featurizer is used
-        return Y_sparse, Y_dense
+        return Y_sparse, Y_dense, label_lengths
 
     # noinspection PyPep8Naming
     def _create_model_data(
@@ -1030,12 +1032,13 @@ class HierarchicalTEDPolicy(Policy):
 
         label_ids = np.array([])
         Y_sparse, Y_dense = np.array([]), np.array([])
+        label_lengths = np.array([])
 
         if data_Y is not None:
             # label_ids = self._label_ids_for_Y(data_Y)
             label_ids = np.squeeze(data_Y, axis=-1)
             if not self._label_data is None:
-                Y_sparse, Y_dense = self._label_features_for_Y(label_ids)
+                Y_sparse, Y_dense, label_lengths = self._label_features_for_Y(label_ids)
             # explicitly add last dimension to label_ids
             # to track correctly dynamic sequences
             label_ids = np.expand_dims(label_ids, -1)
@@ -1049,6 +1052,7 @@ class HierarchicalTEDPolicy(Policy):
         X_entities = []
         X_user_lens = []
         X_bot_lens = []
+        X_entities_per_word = []
 
         for dial in data_X:
             sparse_state_user = []
@@ -1056,6 +1060,7 @@ class HierarchicalTEDPolicy(Policy):
             sparse_state_bot = []
             dense_state_bot = []
             entities = []
+            entities_per_word = []
             user_lens = []
             bot_lens = []
             for state in dial:
@@ -1072,10 +1077,13 @@ class HierarchicalTEDPolicy(Policy):
                 if state[1] is not None:
                     bot_lens.append(state[1].shape[0])
                 elif state[3] is not None:
-                    bot_lens.append(state[3].shape[0])                        
-
+                    bot_lens.append(state[3].shape[0])
                 if state[4] is not None:
                     entities.append(state[4])
+                if self.config[ENTITY_RECOGNITION]:
+                    if state[5] is not None:
+                        entities_per_word.append(np.expand_dims(state[5], -1))
+
             if not sparse_state_user == []:
                 sparse_state_user = np.array(sparse_state_user)
                 sparse_state_bot = np.array(sparse_state_bot)
@@ -1084,6 +1092,8 @@ class HierarchicalTEDPolicy(Policy):
                 dense_state_bot = np.array(dense_state_bot)
             if not entities == []:
                 entities = np.vstack(entities)
+            if not entities_per_word == []:
+                entities_per_word = np.array(entities_per_word)
             if not bot_lens == []:
                 bot_lens = np.expand_dims(np.array(bot_lens), 1)
             if not user_lens == []:
@@ -1093,6 +1103,8 @@ class HierarchicalTEDPolicy(Policy):
             X_dense_user.append(dense_state_user)
             X_dense_bot.append(dense_state_bot)
             X_entities.append(entities)
+            if self.config[ENTITY_RECOGNITION]:
+                X_entities_per_word.append(entities_per_word)
             X_user_lens.append(user_lens)
             X_bot_lens.append(bot_lens)
 
@@ -1102,10 +1114,13 @@ class HierarchicalTEDPolicy(Policy):
         )
         model_data.add_features(LABEL_FEATURES, [Y_sparse, Y_dense])
         model_data.add_features(LABEL_IDS, [label_ids])
+        model_data.add_features(f'{LABEL}_lengths', [label_lengths])
         if dialog_lengths is not None:
             model_data.add_features("dialog_lengths", [np.array(dialog_lengths)])
         model_data.add_features(f"{DIALOGUE}_{USER}_lengths", [np.array(X_user_lens)])
         model_data.add_features(f"{DIALOGUE}_{BOT}_lengths", [np.array(X_bot_lens)])
+        if self.config[ENTITY_RECOGNITION]:
+            model_data.add_features(f"{ENTITIES}_per_word", [np.array(X_entities_per_word)])
         return model_data
 
 
@@ -1113,16 +1128,23 @@ class HierarchicalTEDPolicy(Policy):
         from rasa.utils import train_utils
         sparse_features = []
         dense_features = []
+        label_lengths = []
         for feats in labels_example:
             if not feats[0] is None:
-                sparse_feature = train_utils.sequence_to_sentence_features(feats[0])
+                sparse_feature = feats[0]
+                # sparse_feature = train_utils.sequence_to_sentence_features(feats[0])
                 sparse_features.append(sparse_feature.tocsr().astype(np.float32))
             if not feats[1] is None:
                 dense_features.append([feats[1]])
 
+            if not feats[0] is None:
+                label_lengths.append(feats[0].shape[0])
+            elif not feats[1] is None:
+                label_lengths.append(feats[1].shape[0])
+        label_lengths = np.array(label_lengths, dtype = np.int32)
         sparse_features = np.array(sparse_features)
         dense_features = np.array(dense_features)
-        return [sparse_features, dense_features]
+        return [sparse_features, dense_features], label_lengths
 
     def _create_label_data(self, domain, kwargs) -> RasaModelData:
         # encode all label_ids with policies' featurizer
@@ -1132,7 +1154,7 @@ class HierarchicalTEDPolicy(Policy):
         )
         labels_idx_examples = sorted(labels_idx_examples, key=lambda x: x[0])
         labels_example = [example for (_, example) in labels_idx_examples]
-        label_features = self.collect_label_features(labels_example)
+        label_features, label_lengths = self.collect_label_features(labels_example)
 
         label_data = RasaModelData()
         label_data.add_features(LABEL_FEATURES, label_features)
@@ -1141,6 +1163,8 @@ class HierarchicalTEDPolicy(Policy):
         # explicitly add last dimension to label_ids
         # to track correctly dynamic sequences
         label_data.add_features(LABEL_IDS, [np.expand_dims(label_ids, -1)])
+        label_data.add_features(f'{LABEL}_lengths', [label_lengths])
+
         return label_data
 
     def train(
@@ -1150,10 +1174,16 @@ class HierarchicalTEDPolicy(Policy):
         **kwargs: Any,
     ) -> None:
         """Train the policy on given training trackers."""
+        num_entity_tags = None
         kwargs['hierarchical'] = True
+        if self.config[ENTITY_RECOGNITION]:
+            kwargs[ENTITY_RECOGNITION] = True
 
         # dealing with training data
         training_data = self.featurize_for_training(training_trackers, domain, **kwargs)
+        # add 1 for "O" entities
+        if self.config[ENTITY_RECOGNITION]:
+            num_entity_tags = len(self.featurizer.state_featurizer.interpreter.entities)+1
 
         self._label_data = self._create_label_data(domain, kwargs)
 
@@ -1176,6 +1206,7 @@ class HierarchicalTEDPolicy(Policy):
             self.config,
             isinstance(self.featurizer, MaxHistoryTrackerFeaturizer),
             self._label_data,
+            num_entity_tags
         )
 
         self.model.fit(
@@ -1191,7 +1222,6 @@ class HierarchicalTEDPolicy(Policy):
         self, tracker: DialogueStateTracker, domain: Domain, action_index
     ) -> List[float]:
         """Predict the next action the bot should take.
-
         Return the list of probabilities for the next actions.
         """
 
@@ -1199,9 +1229,11 @@ class HierarchicalTEDPolicy(Policy):
             return self._default_predictions(domain)
         kwargs = {}
         kwargs['hierarchical'] = True
+        if self.config[ENTITY_RECOGNITION]:
+             kwargs[ENTITY_RECOGNITION] = True
         # create model data from tracker
         data_X = self.featurizer.create_X([tracker], domain, **kwargs)
-        
+        # self._label_data = self._create_label_data(domain, kwargs)
         model_data = self._create_model_data(data_X, data_Y = np.array([[action_index]]))
 
         output = self.model.predict(model_data)
@@ -1213,7 +1245,6 @@ class HierarchicalTEDPolicy(Policy):
 
         if self.config[LOSS_TYPE] == SOFTMAX and self.config[RANKING_LENGTH] > 0:
             confidence = train_utils.normalize(confidence, self.config[RANKING_LENGTH])
-
         confidence = confidence.tolist()
 
         probabilities = np.zeros(len(domain.action_names))
@@ -1221,6 +1252,8 @@ class HierarchicalTEDPolicy(Policy):
             probabilities[index] = confidence[i]
 
         return probabilities.tolist()
+
+        # return confidence.tolist()
 
     def persist(self, path: Text) -> None:
         """Persists the policy to a storage."""
@@ -1260,7 +1293,6 @@ class HierarchicalTEDPolicy(Policy):
     @classmethod
     def load(cls, path: Text) -> "TEDPolicy":
         """Loads a policy from the storage.
-
         **Needs to load its featurizer**
         """
 
@@ -1294,6 +1326,9 @@ class HierarchicalTEDPolicy(Policy):
 
         model_data_example = RasaModelData(label_key=LABEL_IDS, data=loaded_data)
         meta = train_utils.update_similarity_type(meta)
+        num_entity_tags = None
+        if meta[ENTITY_RECOGNITION]:
+            num_entity_tags = len(featurizer.state_featurizer.interpreter.entities)+1
 
         model = HierarchicalTED.load(
             str(tf_model_file),
@@ -1304,17 +1339,28 @@ class HierarchicalTEDPolicy(Policy):
                 featurizer, MaxHistoryTrackerFeaturizer
             ),
             label_data=label_data,
+            num_entity_tags = num_entity_tags
         )
 
         # build the graph for prediction
-        predict_data_example = RasaModelData(
-            label_key=LABEL_IDS,
-            data={
-                feature_name: features
-                for feature_name, features in model_data_example.items()
-                if DIALOGUE in feature_name or feature_name == LABEL_IDS
-            },
-        )
+        if meta[ENTITY_RECOGNITION]:
+            predict_data_example = RasaModelData(
+                label_key=LABEL_IDS,
+                data={
+                    feature_name: features
+                    for feature_name, features in model_data_example.items()
+                    if DIALOGUE in feature_name or feature_name == f"{ENTITIES}_per_word"  or feature_name == LABEL_IDS
+                },
+            )
+        else:
+            predict_data_example = RasaModelData(
+                label_key=LABEL_IDS,
+                data={
+                    feature_name: features
+                    for feature_name, features in model_data_example.items()
+                    if DIALOGUE in feature_name  or feature_name == LABEL_IDS
+                },
+            )
 
         model.build_for_predict(predict_data_example)
 
@@ -1329,6 +1375,7 @@ class HierarchicalTED(RasaModel):
         config: Dict[Text, Any],
         max_history_tracker_featurizer_used: bool,
         label_data: RasaModelData,
+        num_entity_tags: Optional[int] = None
     ) -> None:
         super().__init__(name="TED", random_seed=config[RANDOM_SEED])
 
@@ -1338,12 +1385,20 @@ class HierarchicalTED(RasaModel):
         # data
         self.data_signature = data_signature
         self._check_data()
+        self.num_entity_tags = num_entity_tags
 
-        self.predict_data_signature = {
-            feature_name: features
-            for feature_name, features in data_signature.items()
-            if DIALOGUE in feature_name  or feature_name == LABEL_IDS
-        }
+        if self.config[ENTITY_RECOGNITION]:
+            self.predict_data_signature = {
+                feature_name: features
+                for feature_name, features in data_signature.items()
+                if DIALOGUE in feature_name or feature_name == f"{ENTITIES}_per_word" or feature_name == LABEL_IDS
+            }
+        else:
+            self.predict_data_signature = {
+                feature_name: features
+                for feature_name, features in data_signature.items()
+                if DIALOGUE in feature_name or feature_name == LABEL_IDS
+            }
 
         # optimizer
         self._set_optimizer(tf.keras.optimizers.Adam())
@@ -1360,6 +1415,10 @@ class HierarchicalTED(RasaModel):
         self.action_loss = tf.keras.metrics.Mean(name="loss")
         self.action_acc = tf.keras.metrics.Mean(name="acc")
         self.metrics_to_log += ["loss", "acc"]
+        if self.config[ENTITY_RECOGNITION]:
+            self.entity_loss = tf.keras.metrics.Mean(name="e_loss")
+            self.entity_f1 = tf.keras.metrics.Mean(name="e_f1")
+            self.metrics_to_log += ["e_loss", "e_f1"]
 
         # set up tf layers
         self._tf_layers: Dict[Text : tf.keras.layers.Layer] = {}
@@ -1405,6 +1464,18 @@ class HierarchicalTED(RasaModel):
                 self._tf_layers[f"sparse_to_dense_ids.{name}"] = layers.DenseForSparse(
                     units=2, trainable=False, name=f"sparse_to_dense_ids.{name}"
                 )
+
+    def _prepare_entity_recognition_layers(self) -> None:
+        self._tf_layers["embed.logits"] = layers.Embed(
+            self.num_entity_tags, self.config[REGULARIZATION_CONSTANT], "logits"
+        )
+        self._tf_layers["crf"] = layers.CRF(
+            self.num_entity_tags, self.config[REGULARIZATION_CONSTANT]
+        )
+        self._tf_layers["crf_f1_score"] = tfa.metrics.F1Score(
+            num_classes=self.num_entity_tags - 1,  # `0` prediction is not a prediction
+            average="micro",
+        )
 
     def _prepare_layers(self) -> None:
         self._tf_layers[f"loss.{LABEL}"] = layers.DotProductLoss(
@@ -1453,6 +1524,7 @@ class HierarchicalTED(RasaModel):
             self.config[WEIGHT_SPARSITY],
             layer_name_suffix=LABEL,
         )
+
         self._tf_layers[f"{LABEL}_transformer"] = TransformerEncoder(
             self.config[NUM_TRANSFORMER_LAYERS],
             self.config[TRANSFORMER_SIZE],
@@ -1468,6 +1540,7 @@ class HierarchicalTED(RasaModel):
             max_relative_position=self.config[MAX_RELATIVE_POSITION],
             name=LABEL + "_encoder",
         )
+
         self._tf_layers[f"transformer"] = TransformerEncoder(
             self.config[NUM_TRANSFORMER_LAYERS],
             self.config[TRANSFORMER_SIZE],
@@ -1525,28 +1598,68 @@ class HierarchicalTED(RasaModel):
             LABEL,
             self.config[SIMILARITY_TYPE],
         )
-        
+
         if self.config[ENTITY_RECOGNITION]:
-            print('LAYER PREPARE')
+            self._prepare_entity_recognition_layers()
 
     def _create_all_labels_embed(self) -> Tuple[tf.Tensor, tf.Tensor]:
         all_labels = self.tf_label_data[LABEL_FEATURES]
+        all_labels_lengths = tf.cast(self.tf_label_data[f'{LABEL}_lengths'][0], tf.int32)
         all_labels = self._combine_sparse_dense_features(all_labels, LABEL_FEATURES)
         all_labels = self._tf_layers[f"{LABEL}_transformer"](all_labels)
         all_labels = tfa.activations.gelu(all_labels)
-        all_labels = all_labels[:,-1,:]
+        all_labels = self._last_token(all_labels, all_labels_lengths)
+        # all_labels = all_labels[:,-1,:]
+        all_labels = tf.squeeze(all_labels, axis=1)
         all_labels_embed = self._embed_label(all_labels)
         return all_labels, all_labels_embed
 
-    def _embed_utterances(self, utterances_in: tf.Tensor, name, utterance_lengths) -> tf.Tensor:
-        batch_size, max_dialog_length, max_sentence_length, num_features = utterances_in.shape.as_list() 
+    def _f1_score_from_ids(
+        self, tag_ids: tf.Tensor, pred_ids: tf.Tensor, mask: tf.Tensor
+    ) -> tf.Tensor:
+        """Calculates f1 score for train predictions"""
+
+        mask_bool = tf.cast(mask[:, :], tf.bool)
+        # pick only non padding values and flatten sequences
+        tag_ids_flat = tf.boolean_mask(tag_ids, mask_bool)
+        pred_ids_flat = tf.boolean_mask(pred_ids, mask_bool)
+
+        # set `0` prediction to not a prediction
+        tag_ids_flat_one_hot = tf.one_hot(tag_ids_flat - 1, self.num_entity_tags - 1)
+        pred_ids_flat_one_hot = tf.one_hot(pred_ids_flat - 1, self.num_entity_tags - 1)
+
+        f1 = self._tf_layers["crf_f1_score"](
+            tag_ids_flat_one_hot, pred_ids_flat_one_hot
+        )
+
+        return f1
+
+    def _embed_utterances(self, utterances_in: tf.Tensor, name, utterance_lengths, entities_per_word: Optional[tf.Tensor] = None) -> tf.Tensor:
+        batch_size, max_dialog_length, max_sentence_length, num_features = utterances_in.shape.as_list()
         utterances = tf.reshape(utterances_in, [-1, tf.shape(utterances_in)[2], num_features])
-        # sequence_lengths = tf.squeeze(tf.reshape(sequence_lengths, [-1, 1]), -1)
         utterances_embedded = self._tf_layers[f"transformer_"+name+"_utts"](utterances)
         utterances_embedded = tfa.activations.gelu(utterances_embedded)
+        entity_loss = None
+        entity_f1 = None
+        if name == USER:
+            if self.config[ENTITY_RECOGNITION]:
+                # getting rid of cls token
+                utterance_lengths_for_entities = utterance_lengths - 1
+                if not entities_per_word is None:
+                    entities_per_word = tf.reshape(entities_per_word, [-1, tf.shape(entities_per_word)[2], tf.shape(entities_per_word)[3]])
+                    entities_per_word = tf.cast(entities_per_word[:, :, 0], tf.int32)
+                    utterances_embedded_for_entities = self._tf_layers["embed.logits"](utterances_embedded)
+                    pred_ids = self._tf_layers["crf"](utterances_embedded_for_entities, utterance_lengths)
+                    # pytype cannot infer that 'self._tf_layers["crf"]' has the method '.loss'
+                    # pytype: disable=attribute-error
+                    entity_loss = self._tf_layers["crf"].loss(utterances_embedded_for_entities, entities_per_word, utterance_lengths_for_entities)
+                    mask_entities = self._compute_mask(utterance_lengths)
+                    # pytype: enable=attribute-error
+                    entity_f1 = self._f1_score_from_ids(entities_per_word, pred_ids, mask_entities)
+
         utterances_embedded = self._last_token(utterances_embedded, utterance_lengths)
         utterances_embedded = tf.reshape(utterances_embedded, [tf.shape(utterances_in)[0], tf.shape(utterances_in)[1], utterances_embedded.shape[-1]])
-        return utterances_embedded
+        return utterances_embedded, entity_loss, entity_f1
 
 
 
@@ -1556,7 +1669,7 @@ class HierarchicalTED(RasaModel):
         return mask
 
     def _emebed_dialogue(
-        self, dialogue_in: [tf.Tensor], sequence_lengths: tf.Tensor, user_lengths, bot_lengths
+        self, dialogue_in: [tf.Tensor], sequence_lengths: tf.Tensor, user_lengths: tf.Tensor, bot_lengths: tf.Tensor, entities_per_word: Optional[tf.Tensor] = None
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         """Create dialogue level embedding and mask."""
 
@@ -1579,10 +1692,12 @@ class HierarchicalTED(RasaModel):
                 state_level_dialog_features.append(feats)
         user_utterance_features = tf.concat(utterance_features_user, -1)
         bot_utterance_features = tf.concat(utterance_features_bot, -1)
-        user_utterances_embedded = self._embed_utterances(user_utterance_features, USER, user_lengths)
-        bot_utterance_embedded = self._embed_utterances(bot_utterance_features, BOT, bot_lengths)
-        dialogue = tf.concat([user_utterances_embedded, bot_utterance_embedded] +state_level_dialog_features, -1)
         
+        user_utterances_embedded, entity_loss, entity_f1 = self._embed_utterances(user_utterance_features, USER, user_lengths, entities_per_word)
+
+        bot_utterance_embedded, _, _ = self._embed_utterances(bot_utterance_features, BOT, bot_lengths)
+        dialogue = tf.concat([user_utterances_embedded, bot_utterance_embedded] +state_level_dialog_features, -1)
+
         dialogue_transformed = self._tf_layers["transformer"](
             dialogue, 1 - tf.expand_dims(mask, axis=-1), self._training
         )
@@ -1598,7 +1713,7 @@ class HierarchicalTED(RasaModel):
 
         dialogue_embed = self._tf_layers[f"embed.{DIALOGUE}"](dialogue_transformed)
 
-        return dialogue_embed, mask
+        return dialogue_embed, mask, entity_loss, entity_f1
 
     def _embed_label(self, label_in: Union[tf.Tensor, np.ndarray]) -> tf.Tensor:
         label = self._tf_layers[f"ffnn.{LABEL}"](label_in, self._training)
@@ -1630,7 +1745,7 @@ class HierarchicalTED(RasaModel):
                 dense_features.append(self._tf_layers[f"sparse_to_dense.{name}"](_f))
             else:
                 dense_features.append(f)
-        # this is because dialog features will have some which are utterance 
+        # this is because dialog features will have some which are utterance
         # level and some which are turn level, e.g., entities
         if name == LABEL_FEATURES:
             return tf.concat(dense_features, axis=-1)
@@ -1650,8 +1765,12 @@ class HierarchicalTED(RasaModel):
         bot_lengths = tf.cast(tf.reshape(bot_lengths, [-1]), tf.int32)
 
         label_in = batch[LABEL_FEATURES]
+        label_lengths = tf.cast(batch[f'{LABEL}_lengths'][0], tf.int32)
 
         label_in = self._combine_sparse_dense_features(label_in, LABEL_FEATURES)
+        label_in = self._tf_layers[f"{LABEL}_transformer"](label_in)
+        label_in = tfa.activations.gelu(label_in)
+        label_in = self._last_token(label_in, label_lengths)
         # label_in = tf.squeeze(label_in, axis=1)
         batch_dialogue_features = batch[DIALOGUE_FEATURES]
 
@@ -1661,30 +1780,54 @@ class HierarchicalTED(RasaModel):
 
         all_labels, all_labels_embed = self._create_all_labels_embed()
 
-        dialogue_embed, mask = self._emebed_dialogue(dialogue_in, sequence_lengths, user_lengths, bot_lengths)
-        label_in = self._tf_layers[f"{LABEL}_transformer"](label_in)
-        label_in = tfa.activations.gelu(label_in)
-        label_in = label_in[:,-1,:]
+        if self.config[ENTITY_RECOGNITION]:
+            dialogue_embed, mask, entity_loss, entity_f1 = self._emebed_dialogue(dialogue_in, sequence_lengths, user_lengths, bot_lengths, batch[f"{ENTITIES}_per_word"][0])
+        else:
+            dialogue_embed, mask, _, _ = self._emebed_dialogue(dialogue_in, sequence_lengths, user_lengths, bot_lengths)
+        # label_in = self._tf_layers[f"{LABEL}_transformer"](label_in)
+        # label_in = tfa.activations.gelu(label_in)
+        # label_in = label_in[:,-1,:]
+        label_in = tf.squeeze(label_in, axis=1)
         if self.max_history_tracker_featurizer_used:
             # add time dimension if max history featurizer is used
             label_in = label_in[:, tf.newaxis, :]
-        
+
         label_embed = self._embed_label(label_in)
 
         loss, acc = self._tf_layers[f"loss.{LABEL}"](
             dialogue_embed, label_embed, label_in, all_labels_embed, all_labels, mask
         )
 
+        if self.config[ENTITY_RECOGNITION]:
+            loss += entity_loss
+
         self.action_loss.update_state(loss)
         self.action_acc.update_state(acc)
+        if self.config[ENTITY_RECOGNITION]:
+            self.entity_loss.update_state(entity_loss)
+            self.entity_f1.update_state(entity_f1)
 
         return loss
+
+    def gather_candidates(self, indices):
+        all_labels = self.tf_label_data[LABEL_FEATURES]
+        all_labels_lengths = tf.cast(self.tf_label_data[f'{LABEL}_lengths'][0], tf.int32)
+        all_labels = self._combine_sparse_dense_features(all_labels, LABEL_FEATURES)
+        labels_cands = tf.gather(all_labels, indices=tf.cast(indices, tf.int32), axis=0)
+        labels_lengths = tf.gather(all_labels_lengths, indices=tf.cast(indices, tf.int32), axis=0)
+        all_labels = self._tf_layers[f"{LABEL}_transformer"](labels_cands)
+        all_labels = tfa.activations.gelu(all_labels)
+        all_labels = self._last_token(all_labels, labels_lengths)
+        # all_labels = all_labels[:,-1,:]
+        all_labels = tf.squeeze(all_labels, axis=1)
+        all_labels_embed = self._embed_label(all_labels)
+        return all_labels_embed
 
     def batch_predict(
         self, batch_in: Union[Tuple[tf.Tensor], Tuple[np.ndarray]]
     ) -> Dict[Text, tf.Tensor]:
-        import random
         batch = self.batch_to_model_data_format(batch_in, self.predict_data_signature)
+        import random
 
         dialogue_in = self._combine_sparse_dense_features(
             batch[DIALOGUE_FEATURES], DIALOGUE_FEATURES
@@ -1695,27 +1838,39 @@ class HierarchicalTED(RasaModel):
         bot_lengths = batch[f"{DIALOGUE}_{BOT}_lengths"]
         user_lengths = tf.cast(tf.reshape(user_lengths, [-1]), tf.int32)
         bot_lengths = tf.cast(tf.reshape(bot_lengths, [-1]), tf.int32)
+        entities_per_word = batch[f"{ENTITIES}_per_word"]
+        if not entities_per_word == []:
+            entities_per_word = entities_per_word[0]
+        else:
+            entities_per_word = None
 
-        if self.all_labels_embed is None:
-            _, self.all_labels_embed = self._create_all_labels_embed()
+
+        # if self.all_labels_embed is None:
+        #     _, self.all_labels_embed = self._create_all_labels_embed()
         label_id = batch.get(LABEL_IDS)[0][0][0]
-        indices_to_choose_from = tf.concat([tf.range(label_id), tf.range(label_id + 1, tf.shape(self.all_labels_embed)[0])], 0)
+        all_labels_lengths = tf.cast(self.tf_label_data[f'{LABEL}_lengths'][0], tf.int32)
+        indices_to_choose_from = tf.concat([tf.range(label_id), tf.range(label_id + 1, tf.shape(all_labels_lengths)[0])], 0)
         negative_samples = tf.random.shuffle(indices_to_choose_from)[:19]
         all_candidates = tf.concat([negative_samples, tf.expand_dims(label_id, -1)], 0)
-        gathered_candidates = tf.gather(self.all_labels_embed, indices = tf.cast(all_candidates, tf.int32), axis=0)
 
-        dialogue_embed, mask = self._emebed_dialogue(dialogue_in, sequence_lengths, user_lengths, bot_lengths)
+        gathered_candidates = self.gather_candidates(all_candidates)
+
+        dialogue_embed, mask, _, entity_f1 = self._emebed_dialogue(dialogue_in, sequence_lengths, user_lengths, bot_lengths, entities_per_word)
 
         sim_candidates = self._tf_layers[f"loss.{LABEL}"].sim(
             dialogue_embed[:, :, tf.newaxis, :],
             gathered_candidates[tf.newaxis, tf.newaxis, :, :],
             mask,
         )
-        scores_candidates = self._tf_layers[f"loss.{LABEL}"].confidence_from_sim(
+
+        score_cabdidates = self._tf_layers[f"loss.{LABEL}"].confidence_from_sim(
             sim_candidates, self.config[SIMILARITY_TYPE]
         )
 
-        return {"action_scores": scores_candidates, "candidate_indices": all_candidates}
+        return {"action_scores": score_cabdidates, "candidate_indices": all_candidates}
+
+
+# pytype: enable=key-error
 
 
 # pytype: enable=key-error
