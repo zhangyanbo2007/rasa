@@ -1457,13 +1457,13 @@ class DIET(RasaModel):
         dense_features = []
 
         for f in features:
-            if f.shape.ndims == 0:
-                # if sparse_dropout:
-                #    _f = self._tf_layers[f"sparse_input_dropout.{name}"](
-                #        f, self._training
-                #    )
-                # else:
-                _f = f
+            if isinstance(f, tf.SparseTensor):
+                if sparse_dropout:
+                    _f = self._tf_layers[f"sparse_input_dropout.{name}"](
+                        f, self._training
+                    )
+                else:
+                    _f = f
 
                 dense_f = self._tf_layers[f"sparse_to_dense.{name}"](_f)
 
@@ -1771,18 +1771,14 @@ class DIET(RasaModel):
 
     @staticmethod
     def _get_batch_dim(tf_batch_data: Dict[Text, List[tf.Tensor]]) -> int:
-        for k in tf_batch_data.keys():
-            for t in tf_batch_data[k]:
-                if isinstance(t, tf.Tensor) and t.shape.ndims == 3:
-                    return tf.shape(t)[0]
+        if TEXT_SEQUENCE_FEATURES in tf_batch_data:
+            return tf.shape(tf_batch_data[TEXT_SEQUENCE_FEATURES][0])[0]
 
-        return 0
+        return tf.shape(tf_batch_data[TEXT_SENTENCE_FEATURES][0])[0]
 
     def batch_loss(
         self, batch_in: Union[Tuple[tf.Tensor], Tuple[np.ndarray]]
     ) -> tf.Tensor:
-        from tensorflow.python.ops.linalg.sparse import sparse_csr_matrix_ops
-
         tf_batch_data = self.batch_to_model_data_format(batch_in, self.data_signature)
 
         batch_dim = self._get_batch_dim(tf_batch_data)
@@ -1806,7 +1802,7 @@ class DIET(RasaModel):
             sparse_dropout=self.config[SPARSE_INPUT_DROPOUT],
             dense_dropout=self.config[DENSE_INPUT_DROPOUT],
             masked_lm_loss=self.config[MASKED_LM],
-            sequence_ids=False,  # todo
+            sequence_ids=True,
         )
 
         losses = []

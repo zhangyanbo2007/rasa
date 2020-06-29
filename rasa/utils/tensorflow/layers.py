@@ -39,8 +39,8 @@ class SparseDropout(tf.keras.layers.Dropout):
         """
         from tensorflow.python.ops.linalg.sparse import sparse_csr_matrix_ops
 
-        # if not isinstance(inputs, tf.SparseTensor):
-        #    raise ValueError("Input tensor should be sparse.")
+        if not isinstance(inputs, tf.SparseTensor):
+            raise ValueError("Input tensor should be sparse.")
 
         if training is None:
             training = K.learning_phase()
@@ -58,9 +58,7 @@ class SparseDropout(tf.keras.layers.Dropout):
         # need to explicitly recreate sparse tensor, because otherwise the shape
         # information will be lost after `retain`
         # noinspection PyProtectedMember
-        return sparse_csr_matrix_ops.sparse_tensor_to_csr_sparse_matrix(
-            outputs.indices, outputs.values, inputs._dense_shape
-        )
+        return tf.SparseTensor(outputs.indices, outputs.values, inputs._dense_shape)
 
 
 class DenseForSparse(tf.keras.layers.Dense):
@@ -125,12 +123,19 @@ class DenseForSparse(tf.keras.layers.Dense):
         Raises:
             A ValueError if inputs is not a sparse tensor
         """
-        from tensorflow.python.ops.linalg.sparse import sparse_csr_matrix_ops
+        if not isinstance(inputs, tf.SparseTensor):
+            raise ValueError("Input tensor should be sparse.")
 
-        # if not isinstance(inputs, tf.SparseTensor):
-        #    raise ValueError("Input tensor should be sparse.")
+        # outputs will be 2D
+        outputs = tf.sparse.sparse_dense_matmul(
+            tf.sparse.reshape(inputs, [-1, tf.shape(inputs)[-1]]), self.kernel
+        )
 
-        outputs = sparse_csr_matrix_ops.sparse_matrix_mat_mul(inputs, self.kernel)
+        if len(inputs.shape) == 3:
+            # reshape back
+            outputs = tf.reshape(
+                outputs, (tf.shape(inputs)[0], tf.shape(inputs)[1], -1)
+            )
 
         if self.use_bias:
             outputs = tf.nn.bias_add(outputs, self.bias)

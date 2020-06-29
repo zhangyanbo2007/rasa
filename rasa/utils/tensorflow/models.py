@@ -419,14 +419,10 @@ class RasaModel(tf.keras.models.Model):
         for k, signature in data_signature.items():
             for is_sparse, feature_dimension in signature:
                 if is_sparse:
-                    from tensorflow.python.ops.linalg.sparse import (
-                        sparse_csr_matrix_ops,
-                    )
-
                     # explicitly substitute last dimension in shape with known
                     # static value
                     batch_data[k].append(
-                        sparse_csr_matrix_ops.sparse_tensor_to_csr_sparse_matrix(
+                        tf.SparseTensor(
                             batch[idx],
                             batch[idx + 1],
                             [batch[idx + 2][0], batch[idx + 2][1], feature_dimension],
