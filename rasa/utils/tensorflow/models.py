@@ -92,106 +92,106 @@ class RasaModel(tf.keras.models.Model):
     ) -> Dict[Text, tf.Tensor]:
         raise NotImplementedError
 
-    def fit(
-        self,
-        model_data: RasaModelData,
-        epochs: int,
-        batch_size: Union[List[int], int],
-        evaluate_on_num_examples: int,
-        evaluate_every_num_epochs: int,
-        batch_strategy: Text,
-        silent: bool = False,
-        loading: bool = False,
-        eager: bool = True,
-    ) -> None:
-        """Fit model data"""
+    # def fit(
+    #     self,
+    #     model_data: RasaModelData,
+    #     epochs: int,
+    #     batch_size: Union[List[int], int],
+    #     evaluate_on_num_examples: int,
+    #     evaluate_every_num_epochs: int,
+    #     batch_strategy: Text,
+    #     silent: bool = False,
+    #     loading: bool = False,
+    #     eager: bool = True,
+    # ) -> None:
+    #     """Fit model data"""
+    #
+    #     # don't setup tensorboard writers when training during loading
+    #     if not loading:
+    #         self._set_up_tensorboard_writer()
+    #
+    #     tf.random.set_seed(self.random_seed)
+    #     np.random.seed(self.random_seed)
+    #
+    #     disable = silent or is_logging_disabled()
+    #
+    #     evaluation_model_data = None
+    #     if evaluate_on_num_examples > 0:
+    #         if not disable:
+    #             logger.info(
+    #                 f"Validation accuracy is calculated every "
+    #                 f"{evaluate_every_num_epochs} epochs."
+    #             )
+    #
+    #         model_data, evaluation_model_data = model_data.split(
+    #             evaluate_on_num_examples, self.random_seed
+    #         )
+    #
+    #     (
+    #         train_dataset_function,
+    #         tf_train_on_batch_function,
+    #     ) = self._get_tf_train_functions(eager, model_data, batch_strategy)
+    #     (
+    #         evaluation_dataset_function,
+    #         tf_evaluation_on_batch_function,
+    #     ) = self._get_tf_evaluation_functions(eager, evaluation_model_data)
+    #
+    #     val_results = {}  # validation is not performed every epoch
+    #     progress_bar = tqdm(range(epochs), desc="Epochs", disable=disable)
+    #
+    #     training_steps = 0
+    #
+    #     for epoch in progress_bar:
+    #         epoch_batch_size = self.linearly_increasing_batch_size(
+    #             epoch, batch_size, epochs
+    #         )
+    #
+    #         training_steps = self._batch_loop(
+    #             train_dataset_function,
+    #             tf_train_on_batch_function,
+    #             epoch_batch_size,
+    #             True,
+    #             training_steps,
+    #             self.train_summary_writer,
+    #         )
+    #
+    #         if self.tensorboard_log_on_epochs:
+    #             self._log_metrics_for_tensorboard(epoch, self.train_summary_writer)
+    #
+    #         postfix_dict = self._get_metric_results()
+    #
+    #         if evaluate_on_num_examples > 0:
+    #             if self._should_evaluate(evaluate_every_num_epochs, epochs, epoch):
+    #                 self._batch_loop(
+    #                     evaluation_dataset_function,
+    #                     tf_evaluation_on_batch_function,
+    #                     epoch_batch_size,
+    #                     False,
+    #                     training_steps,
+    #                     self.test_summary_writer,
+    #                 )
+    #
+    #                 if self.tensorboard_log_on_epochs:
+    #                     self._log_metrics_for_tensorboard(
+    #                         epoch, self.test_summary_writer
+    #                     )
+    #
+    #                 val_results = self._get_metric_results(prefix="val_")
+    #
+    #             postfix_dict.update(val_results)
+    #
+    #         progress_bar.set_postfix(postfix_dict)
+    #
+    #     if self.model_summary_file is not None:
+    #         self._write_model_summary()
+    #
+    #     self._training = None  # training phase should be defined when building a graph
+    #     if not disable:
+    #         logger.info("Finished training.")
 
-        # don't setup tensorboard writers when training during loading
-        if not loading:
-            self._set_up_tensorboard_writer()
-
-        tf.random.set_seed(self.random_seed)
-        np.random.seed(self.random_seed)
-
-        disable = silent or is_logging_disabled()
-
-        evaluation_model_data = None
-        if evaluate_on_num_examples > 0:
-            if not disable:
-                logger.info(
-                    f"Validation accuracy is calculated every "
-                    f"{evaluate_every_num_epochs} epochs."
-                )
-
-            model_data, evaluation_model_data = model_data.split(
-                evaluate_on_num_examples, self.random_seed
-            )
-
-        (
-            train_dataset_function,
-            tf_train_on_batch_function,
-        ) = self._get_tf_train_functions(eager, model_data, batch_strategy)
-        (
-            evaluation_dataset_function,
-            tf_evaluation_on_batch_function,
-        ) = self._get_tf_evaluation_functions(eager, evaluation_model_data)
-
-        val_results = {}  # validation is not performed every epoch
-        progress_bar = tqdm(range(epochs), desc="Epochs", disable=disable)
-
-        training_steps = 0
-
-        for epoch in progress_bar:
-            epoch_batch_size = self.linearly_increasing_batch_size(
-                epoch, batch_size, epochs
-            )
-
-            training_steps = self._batch_loop(
-                train_dataset_function,
-                tf_train_on_batch_function,
-                epoch_batch_size,
-                True,
-                training_steps,
-                self.train_summary_writer,
-            )
-
-            if self.tensorboard_log_on_epochs:
-                self._log_metrics_for_tensorboard(epoch, self.train_summary_writer)
-
-            postfix_dict = self._get_metric_results()
-
-            if evaluate_on_num_examples > 0:
-                if self._should_evaluate(evaluate_every_num_epochs, epochs, epoch):
-                    self._batch_loop(
-                        evaluation_dataset_function,
-                        tf_evaluation_on_batch_function,
-                        epoch_batch_size,
-                        False,
-                        training_steps,
-                        self.test_summary_writer,
-                    )
-
-                    if self.tensorboard_log_on_epochs:
-                        self._log_metrics_for_tensorboard(
-                            epoch, self.test_summary_writer
-                        )
-
-                    val_results = self._get_metric_results(prefix="val_")
-
-                postfix_dict.update(val_results)
-
-            progress_bar.set_postfix(postfix_dict)
-
-        if self.model_summary_file is not None:
-            self._write_model_summary()
-
-        self._training = None  # training phase should be defined when building a graph
-        if not disable:
-            logger.info("Finished training.")
-
-    def train_on_batch(
+    def train_step(
         self, batch_in: Union[Tuple[tf.Tensor], Tuple[np.ndarray]]
-    ) -> None:
+    ) -> Dict[Text, float]:
         """Train on batch"""
 
         # calculate supervision and regularization losses separately
@@ -226,6 +226,19 @@ class RasaModel(tf.keras.models.Model):
 
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
 
+        return self._get_metric_results()
+
+    def test_step(
+        self, batch_in: Union[Tuple[tf.Tensor], Tuple[np.ndarray]]
+    ) -> Dict[Text, float]:
+        """Train on batch"""
+        prediction_loss = self.batch_loss(batch_in)
+        regularization_loss = tf.math.add_n(self.losses)
+        total_loss = prediction_loss + regularization_loss
+        self.total_loss.update_state(total_loss)
+
+        return self._get_metric_results()
+
     def build_for_predict(
         self, predict_data: RasaModelData, eager: bool = False
     ) -> None:
@@ -256,17 +269,8 @@ class RasaModel(tf.keras.models.Model):
         # create empty model
         model = cls(*args, **kwargs)
         # need to train on 1 example to build weights of the correct size
-        model.fit(
-            model_data_example,
-            epochs=1,
-            batch_size=1,
-            evaluate_every_num_epochs=0,
-            evaluate_on_num_examples=0,
-            batch_strategy=SEQUENCE,
-            silent=True,  # don't confuse users with training output
-            loading=True,  # don't use tensorboard while loading
-            eager=True,  # no need to build tf graph, eager is faster here
-        )
+        model.compile()
+        model.fit(model_data_example.as_tf_dataset(32), epochs=1)
         # load trained weights
         model.load_weights(model_file_name)
 
@@ -371,12 +375,12 @@ class RasaModel(tf.keras.models.Model):
             ),
         )
 
-    def _get_metric_results(self, prefix: Optional[Text] = None) -> Dict[Text, Text]:
+    def _get_metric_results(self, prefix: Optional[Text] = None) -> Dict[Text, float]:
         """Get the metrics results"""
         prefix = prefix or ""
 
         return {
-            f"{prefix}{metric.name}": f"{metric.result().numpy():.3f}"
+            f"{prefix}{metric.name}": metric.result()
             for metric in self.metrics
             if metric.name in self.metrics_to_log
         }
@@ -476,38 +480,3 @@ class RasaModel(tf.keras.models.Model):
                 file.write("\n")
             file.write("\n")
             file.write(f"Total size of variables: {total_number_of_variables}")
-
-    def compile(self, *args, **kwargs) -> None:
-        raise Exception(
-            "This method should neither be called nor implemented in our code."
-        )
-
-    def evaluate(self, *args, **kwargs) -> None:
-        raise Exception(
-            "This method should neither be called nor implemented in our code."
-        )
-
-    def test_on_batch(self, *args, **kwargs) -> None:
-        raise Exception(
-            "This method should neither be called nor implemented in our code."
-        )
-
-    def predict_on_batch(self, *args, **kwargs) -> None:
-        raise Exception(
-            "This method should neither be called nor implemented in our code."
-        )
-
-    def fit_generator(self, *args, **kwargs) -> None:
-        raise Exception(
-            "This method should neither be called nor implemented in our code."
-        )
-
-    def evaluate_generator(self, *args, **kwargs) -> None:
-        raise Exception(
-            "This method should neither be called nor implemented in our code."
-        )
-
-    def predict_generator(self, *args, **kwargs) -> None:
-        raise Exception(
-            "This method should neither be called nor implemented in our code."
-        )

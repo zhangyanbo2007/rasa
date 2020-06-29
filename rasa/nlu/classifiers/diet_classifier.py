@@ -220,7 +220,7 @@ class DIETClassifier(IntentClassifier, EntityExtractor):
         EVAL_NUM_EPOCHS: 20,
         # How many examples to use for hold out validation set
         # Large values may hurt performance, e.g. model accuracy.
-        EVAL_NUM_EXAMPLES: 0,
+        EVAL_NUM_EXAMPLES: 10,
         # ## Model config
         # If 'True' intent classification is trained and intent predicted.
         INTENT_CLASSIFICATION: True,
@@ -825,13 +825,19 @@ class DIETClassifier(IntentClassifier, EntityExtractor):
             config=self.component_config,
         )
 
+        evaluation_model_data = None
+        if self.component_config[EVAL_NUM_EXAMPLES] > 0:
+            model_data, evaluation_model_data = model_data.split(
+                self.component_config[EVAL_NUM_EXAMPLES],
+                self.component_config[RANDOM_SEED],
+            )
+            eval_dataset = evaluation_model_data.as_tf_dataset(32)
+
+        dataset = model_data.as_tf_dataset(32, shuffle=True)
+
+        self.model.compile()
         self.model.fit(
-            model_data,
-            self.component_config[EPOCHS],
-            self.component_config[BATCH_SIZES],
-            self.component_config[EVAL_NUM_EXAMPLES],
-            self.component_config[EVAL_NUM_EPOCHS],
-            self.component_config[BATCH_STRATEGY],
+            dataset, epochs=self.component_config[EPOCHS], validation_data=eval_dataset
         )
 
     # process helpers
