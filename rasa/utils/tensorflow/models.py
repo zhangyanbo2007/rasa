@@ -6,6 +6,7 @@ import logging
 from collections import defaultdict
 from typing import List, Text, Dict, Tuple, Union, Optional, Callable, TYPE_CHECKING
 
+from tensorflow import keras
 from tqdm import tqdm
 from rasa.utils.common import is_logging_disabled
 from rasa.utils.tensorflow.model_data import RasaModelData, FeatureSignature
@@ -135,7 +136,7 @@ class RasaModel(tf.keras.models.Model):
         model = cls(*args, **kwargs)
         # need to train on 1 example to build weights of the correct size
         model.compile()
-        model.fit(model_data_example.as_tf_dataset(32), epochs=1, verbose=0)
+        model.fit(model_data_example.as_tf_dataset(1), epochs=1, verbose=0)
         # load trained weights
         model.load_weights(model_file_name)
 
@@ -201,25 +202,6 @@ class RasaModel(tf.keras.models.Model):
 
         return batch_data
 
-    @staticmethod
-    def linearly_increasing_batch_size(
-        epoch: int, batch_size: Union[List[int], int], epochs: int
-    ) -> int:
-        """Linearly increase batch size with every epoch.
-
-        The idea comes from https://arxiv.org/abs/1711.00489.
-        """
-
-        if not isinstance(batch_size, list):
-            return int(batch_size)
-
-        if epochs > 1:
-            return int(
-                batch_size[0] + epoch * (batch_size[1] - batch_size[0]) / (epochs - 1)
-            )
-        else:
-            return int(batch_size[0])
-
     def _write_model_summary(self):
         total_number_of_variables = np.sum(
             [np.prod(v.shape) for v in self.trainable_variables]
@@ -238,3 +220,22 @@ class RasaModel(tf.keras.models.Model):
                 file.write("\n")
             file.write("\n")
             file.write(f"Total size of variables: {total_number_of_variables}")
+
+    @staticmethod
+    def linearly_increasing_batch_size(
+        epoch: int, batch_size: Union[List[int], int], epochs: int
+    ) -> int:
+        """Linearly increase batch size with every epoch.
+
+        The idea comes from https://arxiv.org/abs/1711.00489.
+        """
+
+        if not isinstance(batch_size, list):
+            return int(batch_size)
+
+        if epochs > 1:
+            return int(
+                batch_size[0] + epoch * (batch_size[1] - batch_size[0]) / (epochs - 1)
+            )
+        else:
+            return int(batch_size[0])

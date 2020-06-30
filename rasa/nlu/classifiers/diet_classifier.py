@@ -936,8 +936,8 @@ class DIETClassifier(IntentClassifier, EntityExtractor):
         confidence_values = {}
 
         for tag_spec in self._entity_tag_specs:
-            predictions = predict_out[f"e_{tag_spec.tag_name}_ids"].numpy()
-            confidences = predict_out[f"e_{tag_spec.tag_name}_scores"].numpy()
+            predictions = predict_out[f"e_{tag_spec.tag_name}_ids"]
+            confidences = predict_out[f"e_{tag_spec.tag_name}_scores"]
             confidences = [float(c) for c in confidences[0]]
             tags = [tag_spec.ids_to_tags[p] for p in predictions[0]]
 
