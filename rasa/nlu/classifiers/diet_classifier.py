@@ -853,7 +853,9 @@ class DIETClassifier(IntentClassifier, EntityExtractor):
         # create session data from message and convert it into a batch of 1
         model_data = self._create_model_data([message], training=False)
 
-        return self.model.predict(model_data)
+        dataset = model_data.as_tf_dataset(1)
+
+        return self.model.predict(dataset)
 
     def _predict_label(
         self, predict_out: Optional[Dict[Text, tf.Tensor]]
@@ -866,7 +868,7 @@ class DIETClassifier(IntentClassifier, EntityExtractor):
         if predict_out is None:
             return label, label_ranking
 
-        message_sim = predict_out["i_scores"].numpy()
+        message_sim = predict_out["i_scores"]
 
         message_sim = message_sim.flatten()  # sim is a matrix
 
@@ -1106,18 +1108,6 @@ class DIETClassifier(IntentClassifier, EntityExtractor):
             entity_tag_specs=entity_tag_specs,
             config=meta,
         )
-
-        # build the graph for prediction
-        predict_data_example = RasaModelData(
-            label_key=label_key,
-            data={
-                feature_name: features
-                for feature_name, features in model_data_example.items()
-                if TEXT in feature_name
-            },
-        )
-
-        model.build_for_predict(predict_data_example)
 
         return model
 
