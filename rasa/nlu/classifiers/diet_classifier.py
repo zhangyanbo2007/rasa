@@ -236,10 +236,10 @@ class DIETClassifier(IntentClassifier, EntityExtractor):
         BILOU_FLAG: True,
         # If you want to use tensorboard to visualize training and validation metrics,
         # set this option to a valid output directory.
-        TENSORBOARD_LOG_DIR: None,
+        TENSORBOARD_LOG_DIR: "logs",
         # Define when training metrics for tensorboard should be logged.
         # Either after every epoch or for every training step.
-        # Valid values: 'epoch' and 'minibatch'
+        # Valid values: 'epoch' and 'batch'
         TENSORBOARD_LOG_LEVEL: "epoch",
         # Specify what features to use as sequence and sentence features
         # By default all features in the pipeline are used.
@@ -825,7 +825,7 @@ class DIETClassifier(IntentClassifier, EntityExtractor):
             config=self.component_config,
         )
 
-        evaluation_model_data = None
+        eval_dataset = None
         if self.component_config[EVAL_NUM_EXAMPLES] > 0:
             model_data, evaluation_model_data = model_data.split(
                 self.component_config[EVAL_NUM_EXAMPLES],
@@ -835,9 +835,24 @@ class DIETClassifier(IntentClassifier, EntityExtractor):
 
         dataset = model_data.as_tf_dataset(32, shuffle=True)
 
+        callbacks = []
+        if self.component_config[TENSORBOARD_LOG_DIR]:
+            callbacks.append(
+                tf.keras.callbacks.TensorBoard(
+                    log_dir=self.component_config[TENSORBOARD_LOG_DIR],
+                    update_freq=self.component_config[TENSORBOARD_LOG_LEVEL],
+                    write_graph=True,
+                    write_images=True,
+                    histogram_freq=10,
+                )
+            )
+
         self.model.compile()
         self.model.fit(
-            dataset, epochs=self.component_config[EPOCHS], validation_data=eval_dataset
+            dataset,
+            epochs=self.component_config[EPOCHS],
+            validation_data=eval_dataset,
+            callbacks=callbacks,
         )
 
     # process helpers
