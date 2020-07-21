@@ -5,7 +5,7 @@ from ruamel.yaml import YAMLError
 
 from rasa.constants import LATEST_TRAINING_DATA_FORMAT_VERSION
 from rasa.nlu.constants import INTENT
-from rasa.nlu.training_data.formats.rasa_yaml import RasaYAMLReader
+from rasa.nlu.training_data.formats.rasa_yaml import RasaYAMLReader, RasaYAMLWriter
 
 MULTILINE_INTENT_EXAMPLES = (
     f'version: "{LATEST_TRAINING_DATA_FORMAT_VERSION}"\n'
@@ -14,6 +14,14 @@ MULTILINE_INTENT_EXAMPLES = (
     f"   examples: |\n"
     f"      - how much CO2 will that use?\n"
     f'      - how much carbon will a one way flight from [new york]{{"entity": "city", "role": "from"}} to california produce?'
+)
+
+MULTILINE_INTENT_EXAMPLE_WITH_SYNONYM = (
+    f'version: "{LATEST_TRAINING_DATA_FORMAT_VERSION}"\n'
+    f"nlu:\n"
+    f" - intent: intent_name\n"
+    f"   examples: |\n"
+    f'      - flight from [boston]{{"entity": "city", "role": "from", "value": "bostn"}}?'
 )
 
 MULTILINE_INTENT_EXAMPLES_NO_LEADING_SYMBOL = """
@@ -47,7 +55,7 @@ def test_wrong_format_raises():
 
     parser = RasaYAMLReader()
 
-    with pytest.raises(YAMLError):
+    with pytest.raises(ValueError):
         parser.reads(wrong_yaml_nlu_content)
 
 
@@ -66,6 +74,7 @@ def test_multiline_intent_is_parsed(example: Text):
     assert training_data.training_examples[0].get(
         INTENT
     ) == training_data.training_examples[1].get(INTENT)
+    assert not len(training_data.entity_synonyms)
 
 
 def test_multiline_intent_example_is_skipped_when_no_leading_symbol():
@@ -78,6 +87,7 @@ def test_multiline_intent_example_is_skipped_when_no_leading_symbol():
     assert len(record) == 2
 
     assert len(training_data.training_examples) == 1
+    assert not len(training_data.entity_synonyms)
 
 
 @pytest.mark.parametrize(
@@ -148,6 +158,13 @@ def test_synonyms_are_parsed():
     assert training_data.entity_synonyms["savings account"] == "savings"
 
 
+def test_synonyms_are_extracted_from_entities():
+    parser = RasaYAMLReader()
+    training_data = parser.reads(MULTILINE_INTENT_EXAMPLE_WITH_SYNONYM)
+
+    assert len(training_data.entity_synonyms) == 1
+
+
 def test_lookup_is_parsed():
 
     lookup_item_name = "additional_currencies"
@@ -188,3 +205,13 @@ def test_regex_is_parsed():
     assert len(training_data.regex_features) == 2
     assert {"name": regex_name, "pattern": pattern_1} in training_data.regex_features
     assert {"name": regex_name, "pattern": pattern_2} in training_data.regex_features
+
+
+def test_yaml_writer():
+    parser = RasaYAMLReader()
+    writer = RasaYAMLWriter()
+
+    training_data = parser.reads(INTENT_EXAMPLES_WITH_METADATA)
+
+    target_string = writer.dumps(training_data)
+    i = 0
