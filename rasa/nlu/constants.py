@@ -30,7 +30,7 @@ ENTITY_ATTRIBUTE_CONFIDENCE_ROLE = (
 
 EXTRACTOR = "extractor"
 
-PRETRAINED_EXTRACTORS = {"DucklingHTTPExtractor", "SpacyEntityExtractor"}
+PRETRAINED_EXTRACTORS = {"DucklingEntityExtractor", "SpacyEntityExtractor"}
 TRAINABLE_EXTRACTORS = {"MitieEntityExtractor", "CRFEntityExtractor", "DIETClassifier"}
 
 NUMBER_OF_SUB_TOKENS = "number_of_sub_tokens"

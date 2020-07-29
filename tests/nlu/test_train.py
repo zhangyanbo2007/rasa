@@ -34,7 +34,7 @@ def pipelines_for_tests():
                 "LexicalSyntacticFeaturizer",
                 "CountVectorsFeaturizer",
                 "CRFEntityExtractor",
-                "DucklingHTTPExtractor",
+                "DucklingEntityExtractor",
                 "DIETClassifier",
                 "ResponseSelector",
                 "EntitySynonymMapper",
