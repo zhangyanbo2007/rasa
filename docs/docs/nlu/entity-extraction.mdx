@@ -9,16 +9,16 @@ Entity extraction involves parsing user messages for required pieces of informat
 provides entity extractors for custom entities as well as pre-trained ones like dates and locations.
 Here is a summary of the available extractors and what they are used for:
 
-|       Component        |     Requires     |                      Model                      |              Notes                   |
-|------------------------|------------------|-------------------------------------------------|--------------------------------------|
-|`CRFEntityExtractor`    |sklearn-crfsuite  |conditional random field                         |good for training custom entities     |
-|`SpacyEntityExtractor`  |spaCy             |averaged perceptron                              |provides pre-trained entities         |
-|`DucklingHTTPExtractor` |running duckling  |context-free grammar                             |provides pre-trained entities         |
-|`MitieEntityExtractor`  |MITIE             |structured SVM                                   |good for training custom entities     |
-|`EntitySynonymMapper`   |existing entities |N/A                                              |maps known synonyms                   |
-|`DIETClassifier`        |                  |conditional random field on top of a transformer |good for training custom entities     |
-|`RegexEntityExtractor`  |                  |N/A                                              |extract entities using the lookup table and regexes defined in the training data |
-
+|       Component          |     Requires     |                      Model                      |              Notes                   |
+|--------------------------|------------------|-------------------------------------------------|--------------------------------------|
+|`CRFEntityExtractor`      |sklearn-crfsuite  |conditional random field                         |good for training custom entities     |
+|`SpacyEntityExtractor`    |spaCy             |averaged perceptron                              |provides pre-trained entities         |
+|`DucklingEntityExtractor` |running duckling  |context-free grammar                             |provides pre-trained entities         |
+|`MitieEntityExtractor`    |MITIE             |structured SVM                                   |good for training custom entities     |
+|`EntitySynonymMapper`     |existing entities |N/A                                              |maps known synonyms                   |
+|`DIETClassifier`          |                  |conditional random field on top of a transformer |good for training custom entities     |
+|`RegexEntityExtractor`    |                  |N/A                                              |extract entities using the lookup table and regexes defined in the training data |
+  
 ## The “entity” Object
 
 After parsing, an entity is returned as a dictionary. There are two fields that show information
@@ -50,7 +50,7 @@ exactly. Instead it will return the trained synonym.
 
 :::note
 The `confidence` will be set by the `CRFEntityExtractor` and the `DIETClassifier` component. The
-`DucklingHTTPExtractor` will always return `1`. The `SpacyEntityExtractor` extractor
+`DucklingEntityExtractor` will always return `1`. The `SpacyEntityExtractor` extractor
 does not provide this information and returns `null`.
 
 :::
@@ -74,7 +74,7 @@ Some extractors, like `duckling`, may include additional information. For exampl
   "confidence":1.0,
   "end":5,
   "entity":"time",
-  "extractor":"DucklingHTTPExtractor",
+  "extractor":"DucklingEntityExtractor",
   "start":0,
   "text":"today",
   "value":"2018-06-21T00:00:00.000-07:00"
@@ -198,7 +198,7 @@ Duckling can also handle durations like “two hours”,
 amounts of money, distances, and ordinals.
 Fortunately, there is a duckling docker container ready to use,
 that you just need to spin up and connect to Rasa NLU
-(see [DucklingHTTPExtractor](./components.mdx#ducklinghttpextractor)).
+(see [DucklingEntityExtractor](./components.mdx#DucklingEntityExtractor)).
 
 ## Regular Expressions (regex)
 

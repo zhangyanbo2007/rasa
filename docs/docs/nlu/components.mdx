@@ -1639,9 +1639,9 @@ Entity extractors extract entities, such as person names or locations, from the 
   :::
 
 
-<a aria-hidden="true" tabIndex="-1" className="anchor enhancedAnchor" id="ducklinghttpextractor"></a>
+<a aria-hidden="true" tabIndex="-1" className="anchor enhancedAnchor" id="DucklingEntityExtractor"></a>
 
-### DucklingHTTPExtractor
+### DucklingEntityExtractor
 
 
 * **Short**
@@ -1673,7 +1673,7 @@ Entity extractors extract entities, such as person names or locations, from the 
           "start": 48,
           "value": "2017-04-10T00:00:00.000+02:00",
           "confidence": 1.0,
-          "extractor": "DucklingHTTPExtractor"
+          "extractor": "DucklingEntityExtractor"
       }]
   }
   ```
@@ -1710,7 +1710,7 @@ Entity extractors extract entities, such as person names or locations, from the 
 
   ```yaml
   pipeline:
-  - name: "DucklingHTTPExtractor"
+  - name: "DucklingEntityExtractor"
     # url of the running duckling server
     url: "http://localhost:8000"
     # dimensions to extract
