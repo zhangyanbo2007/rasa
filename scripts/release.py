@@ -246,8 +246,8 @@ def create_commit(version: Version) -> None:
 
 
 def push_changes() -> None:
-    """Pushes the current branch to upstream."""
-    check_call(["git", "push", "upstream", "HEAD"])
+    """Pushes the current branch to origin."""
+    check_call(["git", "push", "origin", "HEAD"])
 
 
 def ensure_clean_git() -> None:
