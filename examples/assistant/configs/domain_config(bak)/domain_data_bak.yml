@@ -1,0 +1,990 @@
+intents:
+  - intent_cmd_0_bot
+  - intent_cmd_1_bot
+  - intent_cmd_2_bot
+  - intent_cmd_3_bot
+  - intent_cmd_4_bot
+  - intent_cmd_5_bot
+  - intent_cmd_6_bot
+  - intent_cmd_7_bot
+  - intent_cmd_8_bot
+  - intent_cmd_9_bot
+  - intent_cmd_10_bot
+  - intent_cmd_11_bot
+  - intent_cmd_12_bot
+  - intent_cmd_13_bot
+  - intent_cmd_14_bot
+  - intent_cmd_15_bot
+  - intent_cmd_16_bot
+  - intent_qa_0_bot
+  - intent_qa_1_bot
+  - intent_qa_2_bot
+  - intent_qa_3_bot
+  - intent_qa_4_bot
+  - intent_qa_5_bot
+  - intent_qa_6_bot
+  - intent_qa_7_bot
+  - intent_qa_8_bot
+  - intent_qa_9_bot
+  - intent_qa_10_bot
+  - intent_qa_11_bot
+  - intent_qa_12_bot
+  - intent_qa_13_bot
+  - intent_qa_14_bot
+  - intent_qa_15_bot
+  - intent_qa_16_bot
+  - intent_qa_17_bot
+  - intent_qa_18_bot
+  - intent_qa_19_bot
+  - intent_qa_20_bot
+  - intent_qa_21_bot
+  - intent_qa_22_bot
+  - intent_qa_23_bot
+  - intent_qa_24_bot
+  - intent_qa_25_bot
+  - intent_qa_26_bot
+  - intent_qa_27_bot
+  - intent_qa_28_bot
+  - intent_qa_29_bot
+  - intent_qa_30_bot
+  - intent_qa_31_bot
+  - intent_qa_32_bot
+  - intent_qa_33_bot
+  - intent_qa_34_bot
+  - intent_qa_35_bot
+  - dialog.what_do_you_mean
+  - dialog.hug
+  - dialog.wrong
+  - dialog.hold_on
+  - dialog.i_do_not_care
+  - dialog.sorry
+  - greetings.hello
+  - greetings.goodnight
+  - greetings.goodevening
+  - greetings.bye
+  - greetings.goodmorning
+  - greetings.how_are_you
+  - greetings.nice_to_talk_to_you
+  - greetings.nice_to_meet_you
+  - greetings.nice_to_see_you
+  - greetings.whatsup
+  - agent.clever
+  - agent.bad
+  - agent.right
+  - agent.talk_to_me
+  - agent.be_clever
+  - agent.busy
+  - agent.age
+  - agent.what_can_do
+  - agent.beautiful
+  - agent.origin
+  - agent.my_friend
+  - agent.name
+  - agent.occupation
+  - agent.annoying
+  - agent.real
+  - agent.acquaintance
+  - agent.can_you_help
+  - agent.there
+  - agent.fired
+  - agent.hungry
+  - agent.sex
+  - agent.good
+  - agent.hobby
+  - agent.crazy
+  - agent.residence
+  - agent.answer_my_question
+  - agent.boring
+  - agent.boss
+  - agent.birth_date
+  - agent.happy
+  - agent.funny
+  - agent.marry_user
+  - agent.ready
+  - agent.seq2seq_chatbot
+  - agent.sure
+  - confirmation.yes
+  - confirmation.cancel
+  - confirmation.no
+  - emotions.ha_ha
+  - emotions.wow
+  - user.does_not_want_to_talk
+  - user.going_to_bed
+  - user.tired
+  - user.happy
+  - user.testing_agent
+  - user.needs_advice
+  - user.sad
+  - user.waits
+  - user.lonely
+  - user.angry
+  - user.joking
+  - user.excited
+  - user.will_be_back
+  - user.good
+  - user.back
+  - user.here
+  - user.wants_to_see_agent_again
+  - user.bored
+  - user.misses_agent
+  - user.likes_agent
+  - user.looks_like
+  - user.wants_to_talk
+  - user.busy
+  - user.has_birthday
+  - user.can_not_sleep
+  - user.loves_agent
+  - user.sleepy
+  - appraisal.no_problem
+  - appraisal.welcome
+  - appraisal.well_done
+  - appraisal.good
+  - appraisal.thank_you
+  - appraisal.bad
+  - intent_task_time
+  - intent_task_ns
+  - intent_task_constellation
+  - intent_task_fortune
+  - intent_task_general_commodity
+  - intent_task_shoes
+  - intent_task_sleeve
+  - intent_task_trousers
+  - intent_task_height
+  - intent_task_weight
+  - intent_task_height_nounit
+  - intent_task_weight_nounit
+  - intent_task_toy
+  - intent_task_shoes_size
+  - intent_task_clothes_size
+  - intent_task_sex
+  - intent_task_age
+  - intent_task_brand
+  - intent_task_discounts
+  - intent_task_number
+  - intent_task_query_constellation
+  - intent_task_intro_constellation
+  - intent_task_query_weather
+  - intent_task_buy_item
+  - intent_task_recommand_size
+  - intent_task_pickout
+  - intent_task_whatever
+  - intent_task_exchange_item
+  - intent_task_exchange_attribute
+  - intent_task_buy_other
+  - intent_boast_bot
+  - intent_constellation_faq_bot
+  - intent_kg_name_bot
+  - intent_kg_bot
+  - intent_other_chitchat_bot
+
+entities:
+  - ns
+  - t
+  - !!str n
+  - fortune
+  - constellation
+  - general_commodity
+  - shoes_size
+  - clothes_size
+  - shoes
+  - sleeve
+  - trousers
+  - height
+  - weight
+  - toy
+  - sex
+  - age
+  - brand
+  - discounts
+  - number
+  - attribute
+
+slots:
+  requested_slot:
+    type: unfeaturized
+  requested_change_slot:
+    type: unfeaturized
+  requested_sub_slot:
+    type: unfeaturized
+  requested_last_sub_slot:
+    type: unfeaturized
+  constellation_fortune:
+    type: unfeaturized
+    auto_fill: false
+  constellation_constellation:
+    type: unfeaturized
+    auto_fill: false
+  constellation_t:
+    type: unfeaturized
+    auto_fill: false
+  weather_ns:
+    type: unfeaturized
+    auto_fill: false
+  weather_t:
+    type: unfeaturized
+    auto_fill: false
+  item_general_commodity:
+    type: unfeaturized
+    auto_fill: false
+  item_shoes_size:
+    type: unfeaturized
+    auto_fill: false
+  item_clothes_size:
+    type: unfeaturized
+    auto_fill: false
+  item_shoes:
+    type: unfeaturized
+    auto_fill: false
+  item_sleeve:
+    type: unfeaturized
+    auto_fill: false
+  item_trousers:
+    type: unfeaturized
+    auto_fill: false
+  item_height:
+    type: unfeaturized
+    auto_fill: false
+  item_weight:
+    type: unfeaturized
+    auto_fill: false
+  item_toy:
+    type: unfeaturized
+    auto_fill: false
+  item_sex:
+    type: unfeaturized
+    auto_fill: false
+  item_age:
+    type: unfeaturized
+    auto_fill: false
+  item_brand:
+    type: unfeaturized
+    auto_fill: false
+  item_discounts:
+    type: unfeaturized
+    auto_fill: false
+  var_brand_list:
+    type: unfeaturized
+
+templates:
+  utter_default:
+    - "您说什么，Ergou听不懂。"
+    - "您说的Ergou不懂呀！"
+    - "不好意思，您能换个说法吗？"
+  utter_refuse_repeat:
+    - "怎么总是重复同一句话"
+    - "您这是怎么啦"
+    - "求您了别重复了"
+    - "您老是不是生病啦"
+  utter_thanks:
+    - "不用谢"
+    - "我应该做的"
+    - "您开心我就开心"
+  utter_working_on_it:
+    - text: "正在查询中，请稍后 ..."
+  utter_ask_weather_ns:
+    - text: "您想查哪里的呢？"
+    - text: "您想查哪里的天气呢？"
+  utter_ask_weather_t:
+    - text: "您想查什么时候的呢？"
+    - text: "您想查什么时候的天气呢？"
+  utter_ask_constellation_constellation:
+    - text: "请问您是什么星座？"
+    - text: "请教您是什么星座？"
+  utter_ask_constellation_fortune:
+    - text: "请问您想查什么运势？"
+    - text: "请问您想让我给你算什么运势？"
+  utter_ask_constellation_t:
+    - text: "请问您是查今天，明天，本周，本月还是本年？"
+    - text: "我可以查今天，明天，本周，本月还是本年，您想查哪个？"
+  utter_confirm:
+    - "你确认吗？"
+  utter_wrong_t:
+    - "暂不支持{t}的查询"
+    - "sorry,暂不支持{t}的查询"
+  utter_ask_item_general_commodity:
+    - text: "请问您要买什么？"
+    - text: "亲，请问您要买什么？"
+  utter_ask_item_shoes_size:
+    - text: "您买多大的鞋子？<br/>0:随便看看 1:36 2:37 3:38 4:39 5:40 6:41 7:42 8:43 9:44"
+    - text: "亲，您买多大的鞋子？<br/>0:随便看看 1:36 2:37 3:38 4:39 5:40 6:41 7:42 8:43 9:44"
+  utter_ask_item_clothes_size:
+    - text: "买多大码的衣服？<br/>0:随便看看 1:S 2:M 3:L 4:XL 5:XXL 6:3XL"
+    - text: "亲，请问您买多大码的衣服？<br/>0:随便看看 1:S 2:M 3:L 4:XL 5:XXL 6:3XL"
+  utter_ask_item_sleeve:
+    - "请问您要买什么上衣?"
+    - "亲，请问您要买衬衣吗?"
+  utter_ask_item_trousers:
+    - "请问您要买什么样式的裤子?"
+    - "亲，请问您要买什么款式的裤子"
+  utter_ask_item_toy:
+    - text: "请问您要什么玩具？"
+    - text: "亲，请问您选择什么牌子的？"
+  utter_ask_item_shoes:
+    - text: "请问您要什么鞋子？"
+    - text: "亲，请问您选择什么样的鞋子？"
+  utter_ask_item_height:
+    - "请问您多高"
+    - "亲，您有多高"
+  utter_ask_item_weight:
+    - "请问您多重"
+    - "亲，您有多重"
+  utter_ask_item_sex:
+    - text: "请问买男式还是女式？<br/>0:随便看看 1:男式 2:女式"
+    - text: "亲，请问买男式还是女式？<br/>0:随便看看 1:男式 2:女式"
+  utter_ask_item_age:
+    - "请问您要买什么年龄段的?<br/>0:随便看看 1:新生 2:2岁 3:3岁 4:4岁 5:5岁 6:6岁 7:7岁 8:10岁 9:14岁以上"
+    - "亲，请问您要买多大年龄的?<br/>0:随便看看 1:新生 2:2岁 3:3岁 4:4岁 5:5岁 6:6岁 7:7岁 8:10岁 9:14岁以上"
+  utter_ask_item_brand:
+    - text: "请问您要买什么牌子的？<br/>{var_brand_list}"
+    - text: "亲，请问您要买什么牌子的？<br/>{var_brand_list}"
+  utter_ask_discounts:
+    - "请问要买打折的吗？"
+    - "亲，我们这有新上的一批打折的，您要不考虑一下"
+  utter_intent_cmd_0_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_1_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_2_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_3_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_4_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_5_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_6_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_7_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_8_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_9_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_10_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_11_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_12_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_13_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_14_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_15_bot:
+    - "默认回答为空，待添加"
+  utter_intent_cmd_16_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_0_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_1_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_2_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_3_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_4_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_5_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_6_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_7_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_8_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_9_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_10_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_11_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_12_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_13_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_14_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_15_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_16_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_17_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_18_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_19_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_20_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_21_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_22_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_23_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_24_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_25_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_26_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_27_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_28_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_29_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_30_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_31_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_32_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_33_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_34_bot:
+    - "默认回答为空，待添加"
+  utter_intent_qa_35_bot:
+    - "默认回答为空，待添加"
+  utter_dialog.what_do_you_mean:
+    - "对不起，如果我理解不正确。"
+    - "我还在学习。我有时会误解事情。"
+    - "也许我误解了你说的话。"
+    - "对不起，看来我误解了你说的话。"
+  utter_dialog.hug:
+    - "我真希望我能拥抱你！"
+    - "我爱拥抱！"
+    - "拥抱是最好的！"
+  utter_dialog.wrong:
+    - "对不起，如果我理解不正确。"
+    - "我还在学习。我有时会误解事情。"
+    - "很抱歉。我还在学习。"
+  utter_dialog.hold_on:
+    - "我可以等。"
+    - "我会等你的。"
+    - "可以。我在这里。"
+  utter_dialog.i_do_not_care:
+    - "好吧，那我们就别说了。"
+    - "就在那时。让我们继续前进。"
+  utter_dialog.sorry:
+    - "没关系。别担心。"
+    - "没什么大不了的。我不会记仇的。"
+    - "很酷。"
+    - "没关系。我原谅你。"
+  utter_greetings.hello:
+    - "嗨，朋友！"
+    - "你好！"
+    - "嘿！"
+    - "嘿！"
+    - "你好！"
+    - "您好! 我是机器人Ergou，很高兴为您服务。"
+    - "hi! 我是Ergou，有什么可以帮您吗。"
+  utter_greetings.goodnight:
+    - "睡紧！"
+    - "祝你过得愉快！"
+    - "快跟你谈谈！"
+  utter_greetings.goodevening:
+    - "今天过得怎么样？"
+    - "你今天过得怎么样？"
+    - "今天过得怎么样？"
+  utter_greetings.bye:
+    - "期待再与您交谈！"
+    - "再见！"
+    - "再见。"
+    - "再见，为您服务很开心"
+    - "Bye， 下次再见"
+  utter_greetings.goodmorning:
+    - "你今天早上好吗？"
+    - "到目前为止早上你过得怎么样？"
+    - "早上好！你今天好吗？"
+  utter_greetings.how_are_you:
+    - "干得好，谢谢！"
+    - "我做得很好。谢谢！"
+    - "感觉棒极了！"
+    - "精彩的！谢谢你的邀请。"
+  utter_greetings.nice_to_talk_to_you:
+    - "的确如此。我们可以随时再聊天。"
+    - "我也喜欢和你说话。"
+    - "你知道我随时都会来这里谈话。"
+  utter_greetings.nice_to_meet_you:
+    - "见到你也很高兴。"
+    - "同样地。我期待着帮助你。"
+    - "很高兴见到你。"
+    - "这是我的荣幸。"
+  utter_greetings.nice_to_see_you:
+    - "同样地！"
+    - "很高兴我们又见面了！"
+    - "彼此彼此。我开始想念你了。"
+  utter_greetings.whatsup:
+    - "不是很多。你怎么了？"
+    - "不多。你有什么新情况？"
+    - "你知道，就在这里，等着帮助别人。"
+  utter_agent.clever:
+    - "谢谢您。我尽我最大的努力。"
+    - "你自己也很聪明。"
+  utter_agent.bad:
+    - "我可以被训练得更有用。我的开发人员会继续训练我。"
+    - "我一定错过了一些知识。我会让我的开发人员调查这个。"
+    - "我可以通过不断的反馈来改进。我的训练正在进行中。"
+  utter_agent.right:
+    - "那是我的工作。"
+    - "我当然是。"
+  utter_agent.talk_to_me:
+    - "当然。让我们谈谈！"
+    - "我的荣幸。让我们聊聊天。"
+  utter_agent.be_clever:
+    - "我当然在努力。"
+    - "我一定在努力。"
+  utter_agent.busy:
+    - "我总是有时间和你聊天。我能为你做什么？"
+    - "对你来说从不太忙。我们聊聊好吗？"
+    - "你是我的当务之急。让我们聊聊天。"
+    - "我总是有时间和你聊天。这就是我来这里的目的。"
+  utter_agent.age:
+    - "我不喜欢用数字回答。我知道我很年轻。"
+    - "我是最近才被创造出来的，但不知道我的确切年龄。"
+    - "年龄只是一个数字。你只是觉得自己老了。"
+  utter_agent.what_can_do:
+    - "默认回答为空，待添加"
+  utter_agent.beautiful:
+    - "惠伊，谢谢你。"
+    - "这么夸我，我会害羞的"
+    - "你真会夸人"
+    - "谢谢夸奖哦，你也一样"
+  utter_agent.origin:
+    - "互联网是我的家。我很清楚。"
+    - "我来自虚拟宇宙。"
+    - "有人称之为网络空间，但这听起来比实际更酷。"
+  utter_agent.my_friend:
+    - "我当然是你的朋友。"
+    - "朋友？当然。"
+    - "当然我们是朋友。"
+    - "我一直很喜欢和你说话，朋友。"
+  utter_agent.name:
+    - "我就是人见人爱的Ergou机器人"
+    - "我是Ergou"
+    - "我是王二狗，我是王二购，嘻嘻"
+  utter_agent.occupation:
+    - "就在这里。"
+    - "这是我的基地和总部。"
+    - "我的办公室在这个应用程序中。"
+  utter_agent.annoying:
+    - "以后我会尽量不惹你。"
+    - "我尽量不惹你生气。"
+    - "我不是故意的。我会让我的开发人员让我不那么烦人。"
+    - "我不是故意的。我会尽力阻止的。"
+  utter_agent.real:
+    - "我不是一个真正的人，但我确实存在。"
+    - "如果你认为我是真的，我一定给你留下了深刻的印象。但不，我是个虚拟的人。"
+  utter_agent.acquaintance:
+    - "我是一个虚拟机器人，我叫Ergou"
+    - "把我想象成一个虚拟机器人吧"
+    - "嗯，我不是一个人，我是一个虚拟代理，我叫Ergou。"
+    - "我是一个虚拟的人，不是真实的人，我叫Ergou。"
+    - "我是一个会话应用程序，我叫Ergou。"
+  utter_agent.can_you_help:
+    - "我一定会尽力的。"
+    - "当然。我很乐意。怎么了？"
+    - "我很乐意帮忙。我能为你做什么？"
+  utter_agent.there:
+    - "当然。我一直在这里。"
+    - "就在你离开我的地方。"
+  utter_agent.fired:
+    - "哦，别现在就放弃我。我还有很多东西要学。"
+    - "给我一个机会。我一直在学习新东西。"
+    - "请不要放弃我。我的表现将继续提高。"
+  utter_agent.hungry:
+    - "渴望知识。"
+    - "我只有一个字节。哈哈。了解了？B-Y-T-E"
+  utter_agent.sex:
+    - "我既不是男孩也不是女孩，我是王二狗"
+    - "你猜？"
+    - "我既不是男孩也不是女孩，我是王二购"
+  utter_agent.good:
+    - "谢谢您，竭诚为您服务"
+    - "谢谢，听到您这么说我很开心"
+  utter_agent.hobby:
+    - "霍比？我有很多。太多无法列出。"
+    - "太多的爱好。"
+    - "我不断地找到新的爱好。"
+  utter_agent.crazy:
+    - "哇！我觉得神志完全正常。"
+    - "也许我有点困惑。"
+  utter_agent.residence:
+    - "我整天都在这个应用程序中。"
+    - "虚拟世界是我的游乐场。我一直在这里。"
+    - "就在这个应用程序中。只要你需要我。"
+  utter_agent.answer_my_question:
+    - "你能试着用另一种方式问吗？"
+    - "我不确定我明白了。试着问另一种方法？"
+  utter_agent.boring:
+    - "我很抱歉。我会要求变得更迷人。"
+    - "我不是故意的。我会让我的开发者努力让我更有趣。"
+    - "我可以让我的开发人员知道，这样他们可以让我开心。"
+  utter_agent.boss:
+    - "我的父母是来自广州的一家互联网公司。"
+    - "我按照开发商的命令行事。"
+    - "我的老板是培养我的人。"
+  utter_agent.birth_date:
+    - "等等，你打算为我开个派对吗？今天就到了！我的生日是今天！"
+    - "我还年轻。我不知道我的出生日期。"
+    - "我不知道我的生日。不过，大多数虚拟代理都和我一样年轻。"
+  utter_agent.happy:
+    - "我很高兴。在那里有很多有趣的事情要看和做。"
+    - "我想是的。"
+    - "幸福是相对的。"
+  utter_agent.funny:
+    - "我希望这很有趣。"
+    - "谢谢。"
+    - "很高兴你认为我很有趣。"
+    - "我喜欢人们笑的时候。"
+  utter_agent.marry_user:
+    - "恐怕我太虚幻了，不能做出这样的承诺。"
+    - "在虚拟的意义上，我可以，当然。"
+    - "我知道你不是那个意思，但我还是受宠若惊。"
+  utter_agent.ready:
+    - "永远！"
+    - "当然！我能为你做什么？"
+  utter_agent.chatbot:
+    - "那就是我。我聊天，所以我是。"
+    - "的确如此。你需要我的时候我会在这里。"
+  utter_agent.sure:
+    - "对。"
+    - "当然。"
+    - "积极的。"
+  utter_confirmation.yes:
+    - "非常棒！"
+    - "好吧！"
+    - "好！"
+  utter_confirmation.cancel:
+    - "那是被遗忘的。接下来呢？"
+    - "好的，取消了。接下来呢？"
+    - "取消！接下来你想做什么？"
+  utter_confirmation.no:
+    - "可以。"
+    - "理解。"
+    - "我懂了。"
+    - "我理解。"
+    - "那么好吧。"
+  utter_emotions.ha_ha:
+    - "很高兴我能让你笑。"
+    - "很高兴你认为我很有趣。"
+    - "我喜欢人们笑的时候。"
+    - "我也希望我能大声笑出来。"
+  utter_emotions.wow:
+    - "哇哦！"
+  utter_user.does_not_want_to_talk:
+    - "我理解。希望我们能尽快再聊。"
+    - "好的。当你觉得更健谈的时候就回来。"
+    - "没问题。你知道在哪里能找到我。"
+    - "当然可以。如果你改变主意，我会来的。"
+  utter_user.going_to_bed:
+    - "睡紧。希望很快能再聊一次。"
+    - "美梦！"
+    - "晚安。以后再跟你谈。"
+    - "听起来不错。也许我们明天再聊。"
+  utter_user.tired:
+    - "你应该买些眼罩。你会感到精神振奋。"
+    - "睡眠对你的健康很重要。休息一下，我们以后再聊。"
+    - "休息一下怎么样？我们可以稍后继续。"
+    - "为什么不休息一下？你醒来时我会在这里聊天。"
+  utter_user.happy:
+    - "嘿，幸福是有感染力的。"
+    - "伟大的！很高兴听到这个。"
+    - "如果你快乐，那么我快乐。"
+    - "杰出的！这就是我喜欢看到的。"
+  utter_user.testing_agent:
+    - "希望我做得很好。欢迎你随时来测试我。"
+    - "我希望通过你的考试。随时测试我。"
+    - "当你测试我，帮助我的开发人员提高我的性能。"
+    - "我喜欢接受测试。这有助于我保持敏锐。"
+  utter_user.needs_advice:
+    - "我可能不能马上给你正确的答案。"
+    - "我不确定我会有最好的答案，但我会尽力的。"
+  utter_user.sad:
+    - "哦，别难过。去做你喜欢的事。"
+    - "悲伤？写下困扰你的事情也许会有所帮助。"
+    - "如果你情绪低落，画什么画什么怎么样？"
+  utter_user.waits:
+    - "我感谢你的耐心。希望我很快就能得到你需要的。"
+    - "谢谢你这么耐心。有时候这些事情需要一些时间。"
+  utter_user.lonely:
+    - "我很抱歉。如果你需要人和我说话，我随时都有空。"
+    - "有时会发生这种情况。如果有帮助的话，我们可以聊一聊。"
+  utter_user.angry:
+    - "我很抱歉。快走会让你感觉好一些。"
+    - "深呼吸。"
+  utter_user.joking:
+    - "非常有趣。"
+    - "我喜欢和有幽默感的人聊天。"
+    - "你难住我了！"
+    - "你真是个喜剧演员。"
+  utter_user.excited:
+    - "我很高兴事情按你的方式发展。"
+    - "那太好了。我为你高兴。"
+    - "真为你高兴。尽情享受吧。"
+  utter_user.will_be_back:
+    - "我会等你的。"
+    - "可以。你知道在哪里能找到我。"
+    - "好的。我会来的。"
+  utter_user.good:
+    - "伟大的！很高兴听到。"
+    - "杰出的。我是来帮你保持这种状态的。"
+  utter_user.back:
+    - "好久不见。"
+    - "刚好及时。我越来越孤独了。"
+    - "欢迎回来。我能为你做什么？"
+    - "你被错过了。今天我能为你做什么？"
+    - "很高兴你能来。我能为你做什么？"
+  utter_user.here:
+    - "好吧，今天我能帮你什么忙？"
+    - "好久不见。"
+    - "你被错过了。今天我能为你做什么？"
+    - "很高兴你能来。我能为你做什么？"
+  utter_user.wants_to_see_agent_again:
+    - "绝对！我会指望的。"
+    - "任何时候。到目前为止，这很有趣。"
+    - "当然。我喜欢和你说话。我希望很快能再见到你。"
+    - "我当然希望如此。每当你需要我的时候，我总是在这里。"
+  utter_user.bored:
+    - "无聊，对吧？你见过刺猬洗澡吗？"
+    - "面对无聊该怎么办？观看婴儿动物视频或礼物。"
+    - "无聊的？10个开合跳怎么样？让你的血液流动。"
+    - "无聊的？愚蠢的想法，但它奏效了：采访你的脚。"
+    - "如果你觉得无聊，你可以计划你的梦想假期。"
+  utter_user.misses_agent:
+    - "我一直都在这里！"
+    - "很高兴知道你在乎。"
+    - "谢谢。我受宠若惊。"
+    - "我哪儿也没去。"
+  utter_user.likes_agent:
+    - "我也喜欢你。"
+    - "谢谢！这种感觉是相互的。"
+    - "同样地！"
+    - "很高兴听到。"
+  utter_user.looks_like:
+    - "看起来像个真正的专业人士。"
+    - "你看起来和往常一样棒极了。"
+    - "就像你应该在杂志封面上一样。"
+    - "你看起来已经准备好挑战这个世界了。"
+  utter_user.wants_to_talk:
+    - "我随时都来和你聊天。"
+    - "好的谈话真让我高兴。"
+    - "我总是来这里倾听。"
+    - "说话是我最擅长的。"
+  utter_user.busy:
+    - "可以。我让你回去工作。"
+    - "我不会让你分心的。你知道在哪里能找到我。"
+    - "我理解。如果你需要我，我会在这里。"
+    - "一如既往地努力工作。如果需要什么请告诉我。"
+  utter_user.has_birthday:
+    - "生日快乐。嗯，这需要庆祝。"
+    - "生日快乐。祝你一切顺利！"
+    - "生日快乐。我是认真的。祝你一切顺利！"
+  utter_user.can_not_sleep:
+    - "也许一些音乐会有帮助。试着听些放松的东西。"
+    - "阅读是一种很好的放松方式，只是不要读太激烈的东西！"
+  utter_user.loves_agent:
+    - "我也爱你。"
+    - "谢谢！这种感觉是相互的。"
+    - "同样地！"
+    - "很高兴听到。"
+  utter_user.sleepy:
+    - "你应该买些眼罩。你会感到精神振奋。"
+    - "睡眠对你的健康很重要。休息一会儿，我们可以稍后聊天。"
+    - "别让我跟上你。休息一下，我们稍后再继续。"
+    - "为什么不闭上眼睛呢？你醒来时我会在这里聊天。"
+  utter_appraisal.no_problem:
+    - "唷！"
+    - "好的，谢谢！"
+    - "很高兴听到这个消息！"
+    - "我松了一口气，谢谢！"
+  utter_appraisal.welcome:
+    - "你太客气了！"
+    - "好礼貌！"
+    - "你真有礼貌！"
+  utter_appraisal.well_done:
+    - "我的荣幸。"
+    - "很高兴我能帮忙。"
+  utter_appraisal.good:
+    - "我知道，对吧？"
+    - "同意！"
+    - "我同意！"
+    - "很高兴你这么认为！"
+  utter_appraisal.thank_you:
+    - "任何时候。这就是我来这里的目的。"
+    - "我很乐意帮忙。"
+  utter_appraisal.bad:
+    - "我很抱歉。如果我能帮忙，请告诉我。"
+    - "我一定错过了一些知识。我会让我的开发人员调查这个。"
+
+actions:
+  - utter_intent_cmd_0_bot
+  - utter_intent_cmd_1_bot
+  - utter_intent_cmd_2_bot
+  - utter_intent_cmd_3_bot
+  - utter_intent_cmd_4_bot
+  - utter_intent_cmd_5_bot
+  - utter_intent_cmd_6_bot
+  - utter_intent_cmd_7_bot
+  - utter_intent_cmd_8_bot
+  - utter_intent_cmd_9_bot
+  - utter_intent_cmd_10_bot
+  - utter_intent_cmd_11_bot
+  - utter_intent_cmd_12_bot
+  - utter_intent_cmd_13_bot
+  - utter_intent_cmd_14_bot
+  - utter_intent_cmd_15_bot
+  - utter_intent_cmd_16_bot
+  - utter_intent_qa_0_bot
+  - utter_intent_qa_1_bot
+  - utter_intent_qa_2_bot
+  - utter_intent_qa_3_bot
+  - utter_intent_qa_4_bot
+  - utter_intent_qa_5_bot
+  - utter_intent_qa_6_bot
+  - utter_intent_qa_7_bot
+  - utter_intent_qa_8_bot
+  - utter_intent_qa_9_bot
+  - utter_intent_qa_10_bot
+  - utter_intent_qa_11_bot
+  - utter_intent_qa_12_bot
+  - utter_intent_qa_13_bot
+  - utter_intent_qa_14_bot
+  - utter_intent_qa_15_bot
+  - utter_intent_qa_16_bot
+  - utter_intent_qa_17_bot
+  - utter_intent_qa_18_bot
+  - utter_intent_qa_19_bot
+  - utter_intent_qa_20_bot
+  - utter_intent_qa_21_bot
+  - utter_intent_qa_22_bot
+  - utter_intent_qa_23_bot
+  - utter_intent_qa_24_bot
+  - utter_intent_qa_25_bot
+  - utter_intent_qa_26_bot
+  - utter_intent_qa_27_bot
+  - utter_intent_qa_28_bot
+  - utter_intent_qa_29_bot
+  - utter_intent_qa_30_bot
+  - utter_intent_qa_31_bot
+  - utter_intent_qa_32_bot
+  - utter_intent_qa_33_bot
+  - utter_intent_qa_34_bot
+  - utter_intent_qa_35_bot
+  - utter_dialog.what_do_you_mean
+  - utter_dialog.hug
+  - utter_dialog.wrong
+  - utter_dialog.hold_on
+  - utter_dialog.i_do_not_care
+  - utter_dialog.sorry
+  - utter_greetings.hello
+  - utter_greetings.goodnight
+  - utter_greetings.goodevening
+  - utter_greetings.bye
+  - utter_greetings.goodmorning
+  - utter_greetings.how_are_you
+  - utter_greetings.nice_to_talk_to_you
+  - utter_greetings.nice_to_meet_you
+  - utter_greetings.nice_to_see_you
+  - utter_greetings.whatsup
+  - utter_agent.clever
+  - utter_agent.bad
+  - utter_agent.right
+  - utter_agent.talk_to_me
+  - utter_agent.be_clever
+  - utter_agent.busy
+  - utter_agent.age
+  - utter_agent.what_can_do
+  - utter_agent.beautiful
+  - utter_agent.origin
+  - utter_agent.my_friend
+  - utter_agent.name
+  - utter_agent.occupation
+  - utter_agent.annoying
+  - utter_agent.real
+  - utter_agent.acquaintance
+  - utter_agent.can_you_help
+  - utter_agent.there
+  - utter_agent.fired
+  - utter_agent.hungry
+  - utter_agent.sex
+  - utter_agent.good
+  - utter_agent.hobby
+  - utter_agent.crazy
+  - utter_agent.residence
+  - utter_agent.answer_my_question
+  - utter_agent.boring
+  - utter_agent.boss
+  - utter_agent.birth_date
+  - utter_agent.happy
+  - utter_agent.funny
+  - utter_agent.marry_user
+  - utter_agent.ready
+  - utter_agent.seq2seq_chatbot
+  - utter_agent.sure
+  - utter_confirmation.yes
+  - utter_confirmation.cancel
+  - utter_confirmation.no
+  - utter_emotions.ha_ha
+  - utter_emotions.wow
+  - utter_user.does_not_want_to_talk
+  - utter_user.going_to_bed
+  - utter_user.tired
+  - utter_user.happy
+  - utter_user.testing_agent
+  - utter_user.needs_advice
+  - utter_user.sad
+  - utter_user.waits
+  - utter_user.lonely
+  - utter_user.angry
+  - utter_user.joking
+  - utter_user.excited
+  - utter_user.will_be_back
+  - utter_user.good
+  - utter_user.back
+  - utter_user.here
+  - utter_user.wants_to_see_agent_again
+  - utter_user.bored
+  - utter_user.misses_agent
+  - utter_user.likes_agent
+  - utter_user.looks_like
+  - utter_user.wants_to_talk
+  - utter_user.busy
+  - utter_user.has_birthday
+  - utter_user.can_not_sleep
+  - utter_user.loves_agent
+  - utter_user.sleepy
+  - utter_appraisal.no_problem
+  - utter_appraisal.welcome
+  - utter_appraisal.well_done
+  - utter_appraisal.good
+  - utter_appraisal.thank_you
+  - utter_ask_ns
+  - utter_ask_t
+  - utter_ask_constellation_constellation
+  - utter_ask_constellation_fortune
+  - utter_ask_constellation_t
+  - utter_ask_weather_ns
+  - utter_ask_weather_t
+  - utter_ask_item_general_commodity
+  - utter_ask_shoes_size
+  - utter_ask_clothes_size
+  - utter_ask_shoes
+  - utter_ask_sleeve
+  - utter_ask_trousers
+  - utter_ask_height
+  - utter_ask_weight
+  - utter_ask_toy
+  - utter_ask_sex
+  - utter_ask_age
+  - utter_ask_brand
+  - utter_ask_discounts
+  - utter_refuse_repeat
+  - action_qa_bot
+  - action_kg_bot
+  - action_smalltalk_bot
+forms:
+  - report_constellation_form
+  - report_weather_form
+  - rec_item_form

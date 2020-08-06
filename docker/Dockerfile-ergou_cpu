@@ -1,0 +1,122 @@
+# 开发环境
+FROM python:3.6-slim
+#FROM tensorflow/tensorflow:1.12.0-gpu-py3
+
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    wget \
+    openssh-client \
+    graphviz-dev \
+    pkg-config \
+    git-core \
+    openssl \
+    libssl-dev \
+    libffi6 \
+    libffi-dev \
+    libpng-dev \
+    curl \
+    openssh-server vim  file \
+    inetutils-ping net-tools lsof \
+    mongodb && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    echo "root:laka" | chpasswd && echo "PermitRootLogin yes" >> /etc/ssh/sshd_config && \
+    sed '1,$s/PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config > /etc/ssh/sshd_config1 && mv /etc/ssh/sshd_config1 /etc/ssh/sshd_config && \
+    mkdir /run/sshd && /usr/sbin/sshd
+
+# 安装虚拟python环境
+#WORKDIR /dialog_server
+#COPY software/Anaconda3*64.sh ./software/
+#RUN cd software && sh ./Anaconda3*64.sh -b -p /opt/conda && rm -rf ./*
+
+# 安装pip依赖包
+WORKDIR /dialog_server
+#COPY configfile/environment.yaml ./configfile/
+COPY configfile/requirements-cpu.txt ./configfile/requirements.txt
+#RUN echo "export PATH=/opt/conda/bin:$PATH" >> ~/.bashrc && \
+#    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+#    source ~/.bashrc && export PATH=$PATH:/opt/conda/bin && conda --version && \
+#    conda env create -f ./configfile/environment.yaml && \
+#    source activate && conda deactivate && conda activate eliza && \
+#    pip --version && pip install -r ./configfile/requirements.txt
+RUN pip --version && pip install -r ./configfile/requirements.txt
+
+# 安装npm
+#WORKDIR /dialog_server/software
+#COPY software/node*64.tar.xz /dialog_server/software/
+#RUN tar -xJf node*.tar.xz && mv node*64 /opt/ && \
+#    ln -s /opt/node*64/bin/node /usr/local/bin/node && \
+#    ln -s /opt/node*64/bin/npm /usr/local/bin/npm && node -v && npm -v && npm install -g chatito && \
+#    npm install -g npx && \
+#    echo "export PATH=/opt/node-v10.16.0-linux-x64/bin:$PATH" >> ~/.bashrc
+
+# 安装系统工程文件
+WORKDIR /dialog_server
+COPY source/bot_stack ./source/bot_stack
+COPY configfile/mongo.conf ./configfile/mongo.conf
+COPY configfile/rasa ./configfile/rasa
+COPY configfile/rasa-cpu ./configfile/rasa-cpu
+COPY configfile/rasa-smp2019 ./configfile/rasa-smp2019
+#在容器内部创建/bot_tracker_data目录用于存储mongo
+#在容器内部创建存放数据的目录/bot_tracker_data/mongo_data
+#RUN mkdir /data && mkdir /data/db && mkdir /tmp/zeromq_sock_tmp && cp ./configfile/rasa /opt/conda/envs/eliza/bin/rasa && chmod +x /opt/conda/envs/eliza/bin/rasa
+RUN mkdir /data && mkdir /data/db && mkdir /tmp/zeromq_sock_tmp && cp ./configfile/rasa-cpu /usr/local/bin/rasa && chmod +x /usr/local/bin/rasa
+
+# 经验：调试的时候如果发现构建dockerfile出现问题，则将出现问题之间的镜像单独拿出来构建镜像，这样因为docker的cache机制可以节约大量时间
+# 比如说apt环境安装可以单独构建，这样可以节约安装时间,比如下面的安装可能存在变化的就单独放在后面。
+# 调试过程中新增的安装文件,feature分支调试结束后再对Dockfile做测试，测试通过后建议apt-get的部分整合到
+#最上方(减少镜像层数)，然后再在develep里面整合,要不要整合到master版本视生产需求而定。
+
+# 设置挂载卷位置
+#VOLUME ["/app/model", "/app/config", "/app/project"]
+
+# 设置默认环境变量
+ENV PYTHONPATH /dialog_server/source/bot_stack:$PYTHONPATH
+#ENV PATH /opt/conda/bin:/opt/conda/envs/eliza/bin:$PATH
+#ENV PATH=/opt/node-v10.16.0-linux-x64/bin:$PATH
+# TODO:上面这个路径加不进去，原因待分析
+# 这个根据不同的工程位置有所不同
+ENV ZEROMQ_SOCK_TMP_DIR /tmp/zeromq_sock_tmp
+
+# 安装应用工程文件
+COPY source/bot_application /dialog_server/source/bot_application
+COPY source/smp2019 /dialog_server/source/smp2019
+
+# 设置默认工作目录
+WORKDIR /dialog_server/source
+RUN rm -rf data_pre_process
+
+# 暴露查询端口
+EXPOSE 5005
+# 暴露数据库端口
+EXPOSE 27017
+EXPOSE 6379
+EXPOSE 3306
+EXPOSE 1433
+# 暴露TENSORBOARD端口
+EXPOSE 6006
+# 暴露BERT端口
+EXPOSE 5555
+EXPOSE 5556
+# 暴露调试端口
+EXPOSE 22
+
+# ENTRYPOINT
+#ENTRYPOINT ["./entrypoint.sh"]
+
+# CMD
+CMD nohup sh -c "service ssh restart && cd ./bot_application && /bin/bash entrypoint-no-bert.sh && tail -f /dev/null"
+#CMD nohup sh -c "service ssh restart && tail -f /dev/null"
+#CMD nohup sh -c "/bin/bash ./entrypoint.sh"
+#CMD nohup sh -c "/bin/sh nohup python -m rasa_core_sdk.endpoint --actions actions& && python -m rasa_core.run --nlu models/nlu_add_jieba/default/current --core models/dialogue --port 5002 --credentials credentials_custom.yml --endpoints endpoints.yml"
+
+# docker生成命令：
+# sudo docker build -t dialog_server:dev1 .
+# 单独测试启动命令：(注意挂载路径左边改成你自己的路径，建个qa_database_file文件夹，把sample_docs放进去，然后放到相应目录)
+# sudo docker run --name dialog_server1 --network ai_server_dev_bot_network --network-alias dialog_server1  --runtime nvidia -p 11:22 -p 33:33 -p 44:44 -p 55:55  -p 5555:5555 -p 5556:5556 --cap-add=SYS_PTRACE -d dialog_server:dev1
+# NLU测试命令：(注意放在nlu模型目录执行，也即是default的上一级目录，不然会生成新的default)
+# curl localhost:5005/model/parse -d '{"text":"hello"}'
+# curl localhost:5005/webhooks/chatbox/webhook -d '{"sender":"zyb", "message":"你好"}'

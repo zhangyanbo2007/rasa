@@ -1,0 +1,98 @@
+// 公共关键词，除非特别通用，尽可能减少公共关键词的使用，为了美观和语义准确
+~[de]
+    的
+
+//bus_query:汽车查询
+%[bus_query]('training': '303')
+    ~[bus_query_find]@[Src(Src)]~[to]@[Dest(Dest)]~[de]~[bus_all]
+    ~[from]@[Src(Src)]~[to]@[Dest(Dest)]~[de]~[bus_all]
+    @[Src(Src)]~[to]@[Dest(Dest)]~[de]~[bus_all]
+    @[Src(Src)]~[to]@[Dest(Dest)]~[howby]~[bus]
+    ~[howby]~[bus]~[to]@[Dest(Dest)]
+    ~[location]@[Src(Src)]~[howby][go]@[Dest(Dest)]~[de]~[bus]
+    ~[from?]@[Src(Src)]~[to]@[Dest(Dest)]~[where_can_by_bus]
+
+~[bus_query_find]
+    查询
+    帮我查一下
+    查看
+    查一下
+    请查询
+~[from]
+    从
+~[to]
+    到
+    去
+~[location]
+    在
+~[howby]
+    怎么坐
+~[bus]
+    汽车
+    车
+~[bus_all]
+    汽车
+    汽车时刻表
+    汽车票
+~[where_can_by_bus]
+    可以到哪坐车
+    可以去哪坐车
+@[Src(Src)]
+    许昌
+    无锡
+    南京
+    合肥
+    北京
+    台州
+    济宁
+    北海
+    汕头
+    东莞
+    南昌
+    温州
+    赣州
+    西安
+    菏泽
+    济南
+    宁波
+    上海
+    长沙
+    中山
+    九江
+    聊城
+    吉林
+    昭通
+    运城
+    杭州
+    天津
+@[Dest(Dest)]
+    阜阳
+    黄山
+    成都
+    金华
+    潍坊
+    东莞
+    北海
+    汉中
+    厦门
+    广州
+    石嘴山
+    东营
+    岳阳
+    怀化
+    景德镇
+    大连
+    临汾
+    哈尔滨
+    贵港
+    河池
+    崇左
+    来宾
+    东兴
+    桂平
+    北流
+    岑溪
+    合山
+    凭祥
+    宜州
+    呼和浩特

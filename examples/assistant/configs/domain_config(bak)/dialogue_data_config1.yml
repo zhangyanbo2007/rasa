@@ -1,0 +1,517 @@
+intents:
+  - ad_data:
+      use_entities: None
+  - item_data:
+      use_entities: None
+  - intent_cmd_0_bot:
+      use_entities: None
+  - intent_cmd_1_bot:
+      use_entities: None
+  - intent_cmd_2_bot:
+      use_entities: None
+  - intent_cmd_3_bot:
+      use_entities: None
+  - intent_cmd_4_bot:
+      use_entities: None
+  - intent_cmd_5_bot:
+      use_entities: None
+  - intent_cmd_6_bot:
+      use_entities: None
+  - intent_cmd_7_bot:
+      use_entities: None
+  - intent_cmd_8_bot:
+      use_entities: None
+  - intent_cmd_9_bot:
+      use_entities: None
+  - intent_cmd_10_bot:
+      use_entities: None
+  - intent_cmd_11_bot:
+      use_entities: None
+  - intent_cmd_12_bot:
+      use_entities: None
+  - intent_cmd_13_bot:
+      use_entities: None
+  - intent_cmd_14_bot:
+      use_entities: None
+  - intent_cmd_15_bot:
+      use_entities: None
+  - intent_cmd_16_bot:
+      use_entities: None
+  - intent_qa_0_bot:
+      use_entities: None
+  - intent_qa_1_bot:
+      use_entities: None
+  - intent_qa_2_bot:
+      use_entities: None
+  - intent_qa_3_bot:
+      use_entities: None
+  - intent_qa_4_bot:
+      use_entities: None
+  - intent_qa_5_bot:
+      use_entities: None
+  - intent_qa_6_bot:
+      use_entities: None
+  - intent_qa_7_bot:
+      use_entities: None
+  - intent_qa_8_bot:
+      use_entities: None
+  - intent_qa_9_bot:
+      use_entities: None
+  - intent_qa_10_bot:
+      use_entities: None
+  - intent_qa_11_bot:
+      use_entities: None
+  - intent_qa_12_bot:
+      use_entities: None
+  - intent_qa_13_bot:
+      use_entities: None
+  - intent_qa_14_bot:
+      use_entities: None
+  - intent_qa_15_bot:
+      use_entities: None
+  - intent_qa_16_bot:
+      use_entities: None
+  - intent_qa_17_bot:
+      use_entities: None
+  - intent_qa_18_bot:
+      use_entities: None
+  - intent_qa_19_bot:
+      use_entities: None
+  - intent_qa_20_bot:
+      use_entities: None
+  - intent_qa_21_bot:
+      use_entities: None
+  - intent_qa_22_bot:
+      use_entities: None
+  - intent_qa_23_bot:
+      use_entities: None
+  - intent_qa_24_bot:
+      use_entities: None
+  - intent_qa_25_bot:
+      use_entities: None
+  - intent_qa_26_bot:
+      use_entities: None
+  - intent_qa_27_bot:
+      use_entities: None
+  - intent_qa_28_bot:
+      use_entities: None
+  - intent_qa_29_bot:
+      use_entities: None
+  - intent_qa_30_bot:
+      use_entities: None
+  - intent_qa_31_bot:
+      use_entities: None
+  - intent_qa_32_bot:
+      use_entities: None
+  - intent_qa_33_bot:
+      use_entities: None
+  - intent_qa_34_bot:
+      use_entities: None
+  - intent_qa_35_bot:
+      use_entities: None
+  - dialog.what_do_you_mean:
+      use_entities: None
+  - dialog.hug:
+      use_entities: None
+  - dialog.wrong:
+      use_entities: None
+  - dialog.hold_on:
+      use_entities: None
+  - dialog.i_do_not_care:
+      use_entities: None
+  - dialog.sorry:
+      use_entities: None
+  - greetings.hello:
+      use_entities: None
+  - greetings.goodnight:
+      use_entities: None
+  - greetings.goodevening:
+      use_entities: None
+  - greetings.bye:
+      use_entities: None
+  - greetings.goodmorning:
+      use_entities: None
+  - greetings.how_are_you:
+      use_entities: None
+  - greetings.nice_to_talk_to_you:
+      use_entities: None
+  - greetings.nice_to_meet_you:
+      use_entities: None
+  - greetings.nice_to_see_you:
+      use_entities: None
+  - greetings.whatsup:
+      use_entities: None
+  - agent.clever:
+      use_entities: None
+  - agent.bad:
+      use_entities: None
+  - agent.right:
+      use_entities: None
+  - agent.talk_to_me:
+      use_entities: None
+  - agent.be_clever:
+      use_entities: None
+  - agent.busy:
+      use_entities: None
+  - agent.age:
+      use_entities: None
+  - agent.what_can_do:
+      use_entities: None
+  - agent.beautiful:
+      use_entities: None
+  - agent.origin:
+      use_entities: None
+  - agent.my_friend:
+      use_entities: None
+  - agent.name:
+      use_entities: None
+  - agent.occupation:
+      use_entities: None
+  - agent.annoying:
+      use_entities: None
+  - agent.real:
+      use_entities: None
+  - agent.acquaintance:
+      use_entities: None
+  - agent.can_you_help:
+      use_entities: None
+  - agent.there:
+      use_entities: None
+  - agent.fired:
+      use_entities: None
+  - agent.hungry:
+      use_entities: None
+  - agent.sex:
+      use_entities: None
+  - agent.good:
+      use_entities: None
+  - agent.hobby:
+      use_entities: None
+  - agent.crazy:
+      use_entities: None
+  - agent.residence:
+      use_entities: None
+  - agent.answer_my_question:
+      use_entities: None
+  - agent.boring:
+      use_entities: None
+  - agent.boss:
+      use_entities: None
+  - agent.birth_date:
+      use_entities: None
+  - agent.happy:
+      use_entities: None
+  - agent.funny:
+      use_entities: None
+  - agent.marry_user:
+      use_entities: None
+  - agent.ready:
+      use_entities: None
+  - agent.chatbot:
+      use_entities: None
+  - agent.sure:
+      use_entities: None
+  - confirmation.yes:
+      use_entities: None
+  - confirmation.cancel:
+      use_entities: None
+  - confirmation.no:
+      use_entities: None
+  - emotions.ha_ha:
+      use_entities: None
+  - emotions.wow:
+      use_entities: None
+  - user.does_not_want_to_talk:
+      use_entities: None
+  - user.going_to_bed:
+      use_entities: None
+  - user.tired:
+      use_entities: None
+  - user.happy:
+      use_entities: None
+  - user.testing_agent:
+      use_entities: None
+  - user.needs_advice:
+      use_entities: None
+  - user.sad:
+      use_entities: None
+  - user.waits:
+      use_entities: None
+  - user.lonely:
+      use_entities: None
+  - user.angry:
+      use_entities: None
+  - user.joking:
+      use_entities: None
+  - user.excited:
+      use_entities: None
+  - user.will_be_back:
+      use_entities: None
+  - user.good:
+      use_entities: None
+  - user.back:
+      use_entities: None
+  - user.here:
+      use_entities: None
+  - user.wants_to_see_agent_again:
+      use_entities: None
+  - user.bored:
+      use_entities: None
+  - user.misses_agent:
+      use_entities: None
+  - user.likes_agent:
+      use_entities: None
+  - user.looks_like:
+      use_entities: None
+  - user.wants_to_talk:
+      use_entities: None
+  - user.busy:
+      use_entities: None
+  - user.has_birthday:
+      use_entities: None
+  - user.can_not_sleep:
+      use_entities: None
+  - user.loves_agent:
+      use_entities: None
+  - user.sleepy:
+      use_entities: None
+  - appraisal.no_problem:
+      use_entities: None
+  - appraisal.welcome:
+      use_entities: None
+  - appraisal.well_done:
+      use_entities: None
+  - appraisal.good:
+      use_entities: None
+  - appraisal.thank_you:
+      use_entities: None
+  - appraisal.bad:
+      use_entities: None
+  - intent_task_time
+  - intent_task_ns
+  - intent_task_constellation
+  - intent_task_fortune
+  - intent_task_general_commodity
+  - intent_task_shoes
+  - intent_task_sleeve
+  - intent_task_trousers
+  - intent_task_height
+  - intent_task_weight
+  - intent_task_height_nounit
+  - intent_task_weight_nounit
+  - intent_task_toy
+  - intent_task_shoes_size
+  - intent_task_clothes_size
+  - intent_task_sex
+  - intent_task_age
+  - intent_task_brand
+  - intent_task_discounts
+  - intent_task_number
+  - intent_task_query_constellation
+  - intent_task_intro_constellation
+  - intent_task_query_weather
+  - intent_task_buy_item
+  - intent_task_recommand_size
+  - intent_task_pickout
+  - intent_task_whatever
+  - intent_task_exchange_item
+  - intent_task_exchange_attribute
+  - intent_task_buy_other
+
+entities:
+  - ns
+  - t
+  - !!str n
+  - fortune
+  - constellation
+  - general_commodity
+  - shoes_size
+  - clothes_size
+  - shoes
+  - sleeve
+  - trousers
+  - height
+  - weight
+  - toy
+  - sex
+  - age
+  - brand
+  - discounts
+  - number
+  - attribute
+
+slots:
+  requested_slot:
+    type: unfeaturized
+  requested_change_slot:
+    type: unfeaturized
+  requested_sub_slot:
+    type: unfeaturized
+  requested_last_sub_slot:
+    type: unfeaturized
+  constellation_fortune:
+    type: unfeaturized
+    auto_fill: false
+  constellation_constellation:
+    type: unfeaturized
+    auto_fill: false
+  constellation_t:
+    type: unfeaturized
+    auto_fill: false
+  weather_ns:
+    type: unfeaturized
+    auto_fill: false
+  weather_t:
+    type: unfeaturized
+    auto_fill: false
+  item_general_commodity:
+    type: unfeaturized
+    auto_fill: false
+  item_shoes_size:
+    type: unfeaturized
+    auto_fill: false
+  item_clothes_size:
+    type: unfeaturized
+    auto_fill: false
+  item_shoes:
+    type: unfeaturized
+    auto_fill: false
+  item_sleeve:
+    type: unfeaturized
+    auto_fill: false
+  item_trousers:
+    type: unfeaturized
+    auto_fill: false
+  item_height:
+    type: unfeaturized
+    auto_fill: false
+  item_weight:
+    type: unfeaturized
+    auto_fill: false
+  item_toy:
+    type: unfeaturized
+    auto_fill: false
+  item_sex:
+    type: unfeaturized
+    auto_fill: false
+  item_age:
+    type: unfeaturized
+    auto_fill: false
+  item_brand:
+    type: unfeaturized
+    auto_fill: false
+  item_discounts:
+    type: unfeaturized
+    auto_fill: false
+  var_brand_list:
+    type: unfeaturized
+
+templates:
+  utter_default:
+    - "other_chit"
+  utter_refuse_repeat:
+    - "怎么总是重复同一句话"
+    - "您这是怎么啦"
+    - "求您了别重复了"
+    - "您老是不是生病啦"
+  utter_thanks:
+    - "不用谢"
+    - "我应该做的"
+    - "您开心我就开心"
+  utter_working_on_it:
+    - text: "正在查询中，请稍后 ..."
+  utter_ask_weather_ns:
+    - text: "您想查哪里的呢？"
+    - text: "您想查哪里的天气呢？"
+  utter_ask_weather_t:
+    - text: "您想查什么时候的呢？"
+    - text: "您想查什么时候的天气呢？"
+  utter_ask_constellation_constellation:
+    - text: "请问您是什么星座？"
+    - text: "请教您是什么星座？"
+  utter_ask_constellation_fortune:
+    - text: "请问您想查什么运势？"
+    - text: "请问您想让我给你算什么运势？"
+  utter_ask_constellation_t:
+    - text: "请问您是查今天，明天，本周，本月还是本年？"
+    - text: "我可以查今天，明天，本周，本月还是本年，您想查哪个？"
+  utter_confirm:
+    - "你确认吗？"
+  utter_wrong_t:
+    - "暂不支持{t}的查询"
+    - "sorry,暂不支持{t}的查询"
+  utter_ask_item_general_commodity:
+    - text: "请问您要买什么？"
+    - text: "亲，请问您要买什么？"
+  utter_ask_item_shoes_size:
+    - text: "您买多大的鞋子？<br/>0:随便看看 1:36 2:37 3:38 4:39 5:40 6:41 7:42 8:43 9:44"
+    - text: "亲，您买多大的鞋子？<br/>0:随便看看 1:36 2:37 3:38 4:39 5:40 6:41 7:42 8:43 9:44"
+  utter_ask_item_clothes_size:
+    - text: "买多大码的衣服？<br/>0:随便看看 1:S 2:M 3:L 4:XL 5:XXL 6:3XL"
+    - text: "亲，请问您买多大码的衣服？<br/>0:随便看看 1:S 2:M 3:L 4:XL 5:XXL 6:3XL"
+  utter_ask_item_sleeve:
+    - "请问您要买什么上衣?"
+    - "亲，请问您要买衬衣吗?"
+  utter_ask_item_trousers:
+    - "请问您要买什么样式的裤子?"
+    - "亲，请问您要买什么款式的裤子"
+  utter_ask_item_toy:
+    - text: "请问您要什么玩具？"
+    - text: "亲，请问您选择什么牌子的？"
+  utter_ask_item_shoes:
+    - text: "请问您要什么鞋子？"
+    - text: "亲，请问您选择什么样的鞋子？"
+  utter_ask_item_height:
+    - "请问您多高"
+    - "亲，您有多高"
+  utter_ask_item_weight:
+    - "请问您多重"
+    - "亲，您有多重"
+  utter_ask_item_sex:
+    - text: "请问买男式还是女式？<br/>0:随便看看 1:男式 2:女式"
+    - text: "亲，请问买男式还是女式？<br/>0:随便看看 1:男式 2:女式"
+  utter_ask_item_age:
+    - "请问您要买什么年龄段的?<br/>0:随便看看 1:新生 2:2岁 3:3岁 4:4岁 5:5岁 6:6岁 7:7岁 8:10岁 9:14岁以上"
+    - "亲，请问您要买多大年龄的?<br/>0:随便看看 1:新生 2:2岁 3:3岁 4:4岁 5:5岁 6:6岁 7:7岁 8:10岁 9:14岁以上"
+  utter_ask_item_brand:
+    - text: "请问您要买什么牌子的？<br/>{var_brand_list}"
+    - text: "亲，请问您要买什么牌子的？<br/>{var_brand_list}"
+  utter_ask_discounts:
+    - "请问要买打折的吗？"
+    - "亲，我们这有新上的一批打折的，您要不考虑一下"
+  utter_ad_data:
+    - "这是一条广告，针对广告可以做点儿什么"
+  utter_item_data:
+    - "这很大可能是一条商品标题，针对商品标题可以做点儿什么"
+
+actions:
+  - utter_ad_data
+  - utter_item_data
+  - utter_ask_ns
+  - utter_ask_t
+  - utter_ask_constellation_constellation
+  - utter_ask_constellation_fortune
+  - utter_ask_constellation_t
+  - utter_ask_weather_ns
+  - utter_ask_weather_t
+  - utter_ask_item_general_commodity
+  - utter_ask_shoes_size
+  - utter_ask_clothes_size
+  - utter_ask_shoes
+  - utter_ask_sleeve
+  - utter_ask_trousers
+  - utter_ask_height
+  - utter_ask_weight
+  - utter_ask_toy
+  - utter_ask_sex
+  - utter_ask_age
+  - utter_ask_brand
+  - utter_ask_discounts
+  - utter_refuse_repeat
+  - utter_default
+  - action_qa_bot
+  - action_smalltalk_bot
+forms:
+  - report_constellation_form
+  - report_weather_form
+  - rec_item_form

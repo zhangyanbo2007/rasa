@@ -1,0 +1,975 @@
+//通用时间意图
+%[intent_task_time]('training': '41')
+    @[t]
+
+//通用地址意图
+%[intent_task_ns]('training': '35')
+    @[ns]
+
+//星座
+%[intent_task_constellation]('training': '12')
+    @[constellation]
+
+//运势
+%[intent_task_fortune]('training': '24')
+    @[fortune]
+
+//一般商品
+%[intent_task_general_commodity]('training': '26')
+    @[general_commodity]
+
+//鞋子
+%[intent_task_shoes]('training': '18')
+    @[shoes]
+
+//衬衫类
+%[intent_task_sleeve]('training': '15')
+    @[sleeve]
+
+//裤子类
+%[intent_task_trousers]('training': '24')
+    @[trousers]
+
+//玩具
+%[intent_task_toy]('training': '12')
+    @[toy]
+
+//鞋子尺码
+%[intent_task_shoes_size]('training': '20')
+    @[shoes_size]
+
+//衣服尺码
+%[intent_task_clothes_size]('training': '8')
+    @[clothes_size]
+
+//通用年龄意图
+%[intent_task_number]('training': '44')
+    @[number]
+
+//性别
+%[intent_task_sex]('training': '21')
+    @[sex]
+
+//通用年龄意图
+%[intent_task_age]('training': '50')
+    @[age]
+
+//品牌
+%[intent_task_brand]('training': '32')
+    @[brand]
+
+//折扣
+//%[intent_task_discounts]('training': '5')
+//    @[discounts]
+
+//星座查询
+%[intent_task_query_constellation]('training': '5000')
+    ~[please_find?]~[t_constellation?]~[auxiliary]@[fortune]~[how?]
+
+//天气查询
+%[intent_task_query_weather]('training': '5000')
+    ~[please_find?]~[t_ns?]~[auxiliary]~[weather]
+
+//买东西(带品牌或其他，槽值的填充依赖于对于待购买商品属性的解析,目前默认品牌和打折两个属性)
+%[intent_task_buy_item]('training': '10000')
+    *[4%] ~[want_or_recommand]@[general_commodity]
+    ~[want_or_recommand]@[shoes_size]
+    ~[want_or_recommand]@[brand]
+    ~[want_or_recommand]@[sex]
+    ~[want_or_recommand]@[clothes_size]
+    ~[want]@[shoes_size]
+    ~[want]@[brand]
+    ~[want]@[sex]
+    ~[want]@[clothes_size]
+    ~[want_or_recommand]~[hot?]~[commodity]
+
+//衣服鞋子尺寸推荐
+//%[intent_task_recommand_size]('training': '1000')
+//    ~[height_weight?]~[please_recommand?]~[should_wear]~[how_size]~[auxiliary]~[rec_size_commodity?]
+//    ~[height_weight?]~[please_recommand?]~[how_size]~[auxiliary]~[rec_size_commodity?]~[should_wear]
+//    ~[please_recommand?]~[how_size]~[auxiliary]~[rec_size_commodity?]~[should_wear]~[height_weight?]
+//    ~[please_recommand?]~[should_wear]~[how_size]~[auxiliary]~[rec_size_commodity?]~[height_weight?]
+
+//挑好货
+%[intent_task_pickout]('training': '126')
+    ~[please?]~[pickout]
+
+//随便看看
+%[intent_task_whatever]('training': '8')
+    ~[whatever]
+
+//换一组
+%[intent_task_exchange_item]('training': '54')
+    ~[please?]~[exchange]
+
+//更换查询属性
+%[intent_task_exchange_attribute]('training': '1062')
+    ~[please?]~[item_change]@[attribute]
+
+//买点儿别的
+%[intent_task_buy_other]('training': '10')
+    ~[want?]~[buy_other]
+    ~[no_buy_this]
+
+//--------------------------------------------------------------------------------------不同表达的短语替换
+~[greet]
+    你好！
+    您好！
+    嗨！
+    喂！
+    那个！
+    hi！
+    hello！
+    hey！
+~[please]
+    请帮我
+    请
+    请你
+    请您
+    你能不能
+    能不能
+    能不能帮我
+    你能不能帮我
+    可不可以
+    可不可以帮我
+    你可不可以
+    你可不可以帮我
+    能否
+    给我
+    帮我
+    你能给我
+    你给我
+~[find]
+    看看
+    查查
+    查一查
+    看一看
+    查一下
+    看一下
+~[recommand]
+    推荐
+    推荐一个
+    推荐个
+    推荐一款
+~[auxiliary]
+    的
+~[want]
+    我想
+    我要
+~[how]
+    怎么样
+    咋样
+    好不好
+    如何
+    是多少
+    是什么
+~[buy]
+    找
+    找找
+    买
+    买个
+    买一个
+    来一个
+    买一款
+    来个
+    来一打
+
+~[please_recommand]
+    ~[please?]~[recommand]
+~[please_find]
+    ~[please?]~[find]
+~[want_or_recommand]
+    ~[buy]
+    ~[want]~[buy]
+    ~[please?]~[recommand]
+
+~[t_constellation]
+    @[t]
+    @[constellation]
+    @[t]@[constellation]
+    @[constellation]@[t]
+~[t_ns]
+    @[t]
+    @[ns]
+    @[t]@[ns]
+    @[ns]@[t]
+
+~[height_weight]
+    ~[我?]~[height]~[height_ent]~[weight]~[weight_ent]
+    ~[我?]~[height]~[height_ent] @[weight]~[weight?]
+    ~[我?]@[height]~[weight]~[weight_ent]
+    ~[我?]@[height] @[weight]~[weight?]
+    ~[我?]@[height]~[height]~[label_weight]
+    ~[我?]~[label_height]
+    ~[我?]~[weight]~[weight_ent]~[height]~[height_ent]
+    ~[我?]~[weight]~[weight_ent] @[height]~[height?]
+    ~[我?]@[weight]~[height]~[height_ent]
+    ~[我?]@[weight] @[height]~[height?]
+    ~[我?]@[weight]~[weight]~[label_height]
+    ~[我?]~[label_weight]
+
+~[label_height]
+    ~[height]~[height_ent]
+    @[height]~[height?]
+~[label_weight]
+    ~[weight]~[weight_ent]
+    @[weight]~[weight?]
+~[height_ent]
+    @[height]
+    @[height_nounit]
+~[weight_ent]
+    @[weight]
+    @[weight_nounit]
+
+~[commodity]
+    ~[discounts?]~[brand?]@[general_commodity]
+    ~[discounts?]~[age?]~[sex?]~[brand?]@[toy]
+    ~[discounts?]~[sex?]~[clothes_size?]~[brand?]@[trousers]
+    ~[discounts?]~[clothes_size?]~[sex?]~[brand?]@[trousers]
+    ~[discounts?]~[clothes_size?]~[sex?]~[brand?]@[sleeve]
+    ~[discounts?]~[shoes_size?]~[sex?]~[brand?]@[shoes]
+
+~[weather]
+    天气
+    天气怎么样
+    天气怎样
+    天气咋样
+    气温会上升吗
+    气温会下降吗
+    会下雪吗
+    天气好吗
+    天气如何
+    会下雨吗
+    天气预报
+    天气情况
+
+~[height]
+    身高
+    高
+~[weight]
+    体重
+    重
+~[should_wear]
+    我应该穿
+    穿
+    我要穿
+    该穿
+~[how_size]
+    多大
+    多大码
+    多少size
+~[rec_size_commodity]
+    @[trousers]
+    @[sleeve]
+    @[shoes]
+~[clothes_size]
+    尺码@[clothes_size]
+    @[clothes_size]尺码
+    @[clothes_size]码
+~[shoes_size]
+    尺码@[shoes_size]
+    @[shoes_size]尺码
+    大小@[shoes_size]
+    @[shoes_size]大小
+~[sex]
+    @[sex]
+~[age]
+    ~[年龄?]@[age]~[左右?]
+~[brand]
+    @[brand]牌子
+    @[brand]品牌
+~[discounts]
+    @[discounts]
+~[haveornot]
+    最近有没有
+    有没有
+    有没
+~[hot]
+    热卖的
+    卖的好的
+    比较热的
+    流行的
+    热门的
+    很热的
+~[pickout]
+    挑好货
+    捡好货
+    买好货
+    好货拿来
+    挑个好货
+    来个好货
+    好货来一打
+~[exchange]
+    换一批
+    换一打
+    换一组
+    再换一批
+    再换一打
+    再换一组
+~[item_change]
+    更换
+    换个
+    选择别的
+    选个别的
+~[whatever]
+    随便看看
+    随便来点儿
+    随便来点儿吧
+    随便
+    随便吧
+    随意
+    请随意
+    whatever
+~[buy_other]
+    买点儿别的
+    买别的商品
+    买其他的
+    买点儿其他的
+    换个其他的商品
+    换个其他种类的商品
+    换个别的商品
+~[no_buy_this]
+    我不想买这个了
+    我不想买这个商品了
+//-------------------------------------------------------------------------------------------------------------------------------------------------------实体标注
+@[constellation]
+    ~[白羊座]
+    ~[金牛座]
+    ~[双子座]
+    ~[巨蟹座]
+    ~[狮子座]
+    ~[处女座]
+    ~[天秤座]
+    ~[天蝎座]
+    ~[射手座]
+    ~[摩羯座]
+    ~[水瓶座]
+    ~[双鱼座]
+@[fortune]
+    ~[综合指数]
+    ~[爱情指数]
+    ~[工作指数]
+    ~[财富指数]
+    ~[爱情运势]
+    ~[工作运势]
+    ~[学业运势]
+    ~[财富运势]
+    ~[健康运势]
+    ~[运势]
+    ~[提醒]
+    ~[优势]
+    ~[弱势]
+    ~[贵人星座]
+    ~[小人星座]
+    ~[缘分星座]
+    ~[幸运数字]
+    ~[吉日]
+    ~[吉时]
+    ~[吉利方位]
+    ~[幸运色]
+    ~[简评]
+@[t]
+    ~[今天]
+    ~[昨天]
+    ~[明天]
+    ~[前天]
+    ~[后天]
+    ~[大前天]
+    ~[大后天]
+    ~[本周]
+    ~[下周]
+    ~[下下周]
+    ~[本月]
+    ~[本年]
+@[ns]
+    ~[北京]
+    ~[天津]
+    ~[河北]
+    ~[山西]
+    ~[内蒙]
+    ~[辽宁]
+    ~[吉林]
+    ~[黑龙江]
+    ~[江苏]
+    ~[浙江]
+    ~[安徽]
+    ~[福建]
+    ~[江西]
+    ~[山东]
+    ~[河南]
+    ~[湖北]
+    ~[湖南]
+    ~[广东]
+    ~[广西]
+    ~[海南]
+    ~[重庆]
+    ~[四川]
+    ~[贵州]
+    ~[云南]
+    ~[西藏]
+    ~[陕西]
+    ~[甘肃]
+    ~[青海]
+    ~[宁夏]
+    ~[新疆]
+    ~[台湾]
+    ~[郑州]
+    ~[广州]
+    ~[驻马店]
+    ~[东京]
+@[general_commodity]
+    ~[连衣裙]
+    ~[帽子]
+    ~[洗发水]
+    ~[尿不湿]
+    ~[奶粉]
+    ~[杯子]
+    ~[茶壶]
+    ~[机器人]
+    ~[电视]
+    ~[电脑]
+    ~[手机]
+    ~[汽车]
+    ~[桌子]
+    ~[手套]
+    ~[沙发]
+    ~[相机]
+    ~[行李箱]
+    ~[键盘]
+    ~[鼠标]
+    ~[水桶]
+    ~[苹果]
+    ~[香蕉]
+    ~[葡萄]
+    ~[方便面]
+    ~[毛巾]
+    ~[香皂]
+@[age]
+    ~[1岁]
+    ~[2岁]
+    ~[3岁]
+    ~[4岁]
+    ~[5岁]
+    ~[6岁]
+    ~[7岁]
+    ~[8岁]
+    ~[9岁]
+    ~[10岁]
+    ~[11岁]
+    ~[12岁]
+    ~[13岁]
+    ~[14岁]
+    ~[15岁]
+    ~[1个月]
+    ~[2个月]
+    ~[3个月]
+    ~[4个月]
+    ~[5个月]
+    ~[6个月]
+    ~[7个月]
+    ~[8个月]
+    ~[9个月]
+    ~[10个月]
+    ~[11个月]
+    ~[12个月]
+    ~[大人]
+    ~[成人]
+    ~[婴儿]
+@[shoes_size]
+    ~[36]
+    ~[37]
+    ~[38]
+    ~[39]
+    ~[40]
+    ~[41]
+    ~[42]
+    ~[43]
+    ~[44]
+    ~[45]
+    ~[eur36]
+    ~[eur37]
+    ~[eur38]
+    ~[eur39]
+    ~[eur40]
+    ~[eur41]
+    ~[eur42]
+    ~[eur43]
+    ~[eur44]
+    ~[eur45]
+@[clothes_size]
+    ~[S]
+    ~[M]
+    ~[L]
+    ~[XL]
+    ~[XXL]
+    ~[3XL]
+@[shoes]
+    ~[鞋子]
+    ~[低帮鞋]
+    ~[中帮鞋]
+    ~[高帮鞋]
+    ~[单鞋]
+    ~[靴子]
+    ~[凉鞋]
+    ~[帆布鞋]
+    ~[布洛克]
+    ~[增高鞋]
+    ~[内增高鞋]
+    ~[小白鞋]
+    ~[休闲鞋]
+    ~[潮鞋]
+    ~[板鞋]
+    ~[皮鞋]
+    ~[商务皮鞋]
+    ~[懒人鞋]
+@[sleeve]
+    ~[衬衫]
+    ~[九分袖]
+    ~[七分袖]
+    ~[五分袖]
+    ~[短袖]
+    ~[长袖]
+    ~[衬衣]
+    ~[蕾丝衫]
+    ~[雪纺衫]
+    ~[夹克]
+    ~[T恤]
+    ~[T恤衫]
+    ~[卫衣]
+    ~[毛衣]
+    ~[风衣]
+@[trousers]
+    ~[裤子]
+    ~[五分裤]
+    ~[六分裤]
+    ~[七分裤]
+    ~[八分裤]
+    ~[九分裤]
+    ~[长裤]
+    ~[短裤]
+    ~[超短裤]
+    ~[两截裤]
+    ~[牛仔裤]
+    ~[西裤]
+    ~[哈伦裤]
+    ~[直筒裤]
+    ~[工装裤]
+    ~[运动裤]
+    ~[小脚裤]
+    ~[铅笔裤]
+    ~[阔腿裤]
+    ~[阔脚裤]
+    ~[锥形裤]
+    ~[沙滩裤]
+    ~[低裆跨裤]
+    ~[连衣裤]
+@[toy]
+    ~[玩具]
+    ~[电子玩具]
+    ~[娃娃]
+    ~[拼插积木]
+    ~[电玩具]
+    ~[磁力片]
+    ~[玩沙工具]
+    ~[拼搭积木]
+    ~[积木]
+    ~[机器人]
+    ~[变形机器人]
+    ~[变形金刚]
+@[sex]
+    ~[男孩]
+    ~[女孩]
+@[brand]
+    ~[惠氏]
+    ~[美索佳儿]
+    ~[美赞臣]
+    ~[雅培]
+    ~[诺优能]
+    ~[雀巢母婴]
+    ~[飞鹤]
+    ~[金领冠]
+    ~[爱他美]
+    ~[君乐宝]
+    ~[鸿星尔克]
+    ~[回力]
+    ~[安踏]
+    ~[耐克]
+    ~[特步]
+    ~[花花公子]
+    ~[阿迪达斯]
+    ~[李宁]
+    ~[优衣库]
+    ~[森马]
+    ~[北极绒]
+    ~[唐狮]
+    ~[美特斯邦威]
+    ~[乐高]
+    ~[Disney]
+    ~[育儿宝]
+    ~[神通小子]
+    ~[益米]
+    ~[兔妈妈]
+    ~[三宝]
+    ~[万童乐]
+@[discounts]
+    ~[优惠券]
+@[height]
+    ~[165cm]
+    ~[165CM]
+    ~[1米8]
+    ~[1米85]
+    ~[165厘米]
+    ~[一米八]
+    ~[1米八三]
+@[height_nounit]
+    ~[165]
+    ~[170]
+@[weight]
+    ~[100斤]
+    ~[100公斤]
+    ~[80斤]
+    ~[80公斤]
+    ~[100kg]
+    ~[100Kg]
+    ~[100KG]
+    ~[50kg]
+    ~[50Kg]
+    ~[50KG]
+@[weight_nounit]
+    ~[80]
+    ~[200]
+@[number]
+    ~[0]
+    ~[1]
+    ~[2]
+    ~[3]
+    ~[4]
+    ~[5]
+    ~[6]
+    ~[7]
+    ~[8]
+    ~[9]
+    ~[10]
+@[attribute]
+    ~[品牌]
+    ~[尺寸]
+    ~[性别]
+    ~[年龄]
+    ~[地点]
+    ~[时间]
+    ~[星座]
+    ~[运势]
+
+//-------------------------------------------------------------------------------------------------------------------------------------------------实体近义词替换
+~[今天]('synonym': 'true')
+    今天
+    今日
+    今个
+~[明天]('synonym': 'true')
+    明天
+    明日
+    明个
+~[昨天]('synonym': 'true')
+    昨天
+    昨日
+    昨个
+~[后天]('synonym': 'true')
+    后天
+    后日
+    后个
+~[大后天]('synonym': 'true')
+    大后天
+    大后日
+    大后个
+~[大前天]('synonym': 'true')
+    大前天
+    大前日
+    大前个
+~[本周]('synonym': 'true')
+    本周
+    这周
+    这个周
+    这礼拜
+    这个礼拜
+    这星期
+    这个星期
+~[下周]('synonym': 'true')
+    下周
+    下礼拜
+    下星期
+    下个礼拜
+    下个星期
+~[下下周]('synonym': 'true')
+    下下周
+    下下礼拜
+    下下星期
+    下下个礼拜
+    下下个星期
+~[本月]('synonym': 'true')
+    本月
+    这个月
+~[本年]('synonym': 'true')
+    本年
+    年度
+    今年
+~[白羊座]('synonym': 'true')
+    白羊座
+    白羊
+~[金牛座]('synonym': 'true')
+    金牛座
+    金牛
+~[双子座]('synonym': 'true')
+    双子座
+    双子
+~[巨蟹座]('synonym': 'true')
+    巨蟹座
+    巨蟹
+~[狮子座]('synonym': 'true')
+    狮子座
+    狮子
+~[处女座]('synonym': 'true')
+    处女座
+    处女
+    室女座
+    室女
+~[天秤座]('synonym': 'true')
+    天秤座
+    天秤
+~[天蝎座]('synonym': 'true')
+    天蝎座
+    天蝎
+~[射手座]('synonym': 'true')
+    射手座
+    人马座
+    人马
+    射手
+~[摩羯座]('synonym': 'true')
+    摩羯座
+    摩羯
+~[水瓶座]('synonym': 'true')
+    水瓶座
+    宝瓶座
+    宝瓶
+    水瓶
+~[双鱼座]('synonym': 'true')
+    双鱼座
+    双鱼
+~[爱情运势]('synonym': 'true')
+    爱情运势
+    爱情运
+    桃花运
+~[财富运势]('synonym': 'true')
+    财富运势
+    财富运
+    财运
+~[幸运数字]('synonym': 'true')
+    幸运数字
+    幸运数
+    幸运字
+~[幸运色]('synonym': 'true')
+    幸运色
+    幸运颜色
+    吉利颜色
+    吉色
+~[吉时]('synonym': 'true')
+    吉时
+    吉利时间
+~[吉日]('synonym': 'true')
+    吉日
+    幸运日期
+    幸运日
+~[缘分星座]('synonym': 'true')
+    缘分星座
+    速配星座
+    配对星座
+~[简评]('synonym': 'true')
+    简评
+    简单评价
+    简要评价
+~[1个月]('synonym': 'true')
+    1个月
+    满月
+~[成人]('synonym': 'true')
+    成人
+    成年人
+~[婴儿]('synonym': 'true')
+    婴儿
+    新生
+    新生婴儿
+    婴幼儿
+~[1岁]('synonym': 'true')
+    1岁
+    1周岁
+~[2岁]('synonym': 'true')
+    2岁
+    2周岁
+~[3岁]('synonym': 'true')
+    3岁
+    3周岁
+~[4岁]('synonym': 'true')
+    4岁
+    4周岁
+~[5岁]('synonym': 'true')
+    5岁
+    5周岁
+~[6岁]('synonym': 'true')
+    6岁
+    6周岁
+~[7岁]('synonym': 'true')
+    7岁
+    7周岁
+~[8岁]('synonym': 'true')
+    8岁
+    8周岁
+~[9岁]('synonym': 'true')
+    9岁
+    9周岁
+~[10岁]('synonym': 'true')
+    10岁
+    10周岁
+~[11岁]('synonym': 'true')
+    11岁
+    11周岁
+~[12岁]('synonym': 'true')
+    12岁
+    12周岁
+~[13岁]('synonym': 'true')
+    13岁
+    13周岁
+~[14岁]('synonym': 'true')
+    14岁
+    14周岁
+~[15岁]('synonym': 'true')
+    15岁
+    15周岁
+~[两截裤]('synonym': 'true')
+    两截裤
+    可拆卸裤
+    两节裤
+    可拆卸两节裤
+    可拆卸两截裤
+~[裤子]('synonym': 'true')
+    裤
+    裤子
+~[3XL]('synonym': 'true')
+    3XL
+    XXXL
+~[XXL]('synonym': 'true')
+    2XL
+    XXL
+~[男孩]('synonym': 'true')
+    男孩
+    大男孩
+    小男孩
+    男孩子
+    男孩儿
+    男性
+    男
+    男士
+    男式
+    男用
+    男款
+~[女孩]('synonym': 'true')
+    女孩
+    小女孩
+    女孩子
+    女孩儿
+    女性
+    女
+    女士
+    女式
+    女用
+    女款
+~[乐高]('synonym': 'true')
+    乐高
+    LEGO
+~[0]('synonym': 'true')
+    0
+    零
+    zero
+    ZERO
+~[1]('synonym': 'true')
+    1
+    一
+    one
+    ONE
+~[2]('synonym': 'true')
+    2
+    二
+    two
+    TWO
+~[3]('synonym': 'true')
+    3
+    三
+    three
+    THREE
+~[4]('synonym': 'true')
+    4
+    四
+    four
+    FOUR
+~[5]('synonym': 'true')
+    5
+    五
+    five
+    FIVE
+~[6]('synonym': 'true')
+    6
+    六
+    six
+    SIX
+~[7]('synonym': 'true')
+    7
+    七
+    seven
+    SEVEN
+~[8]('synonym': 'true')
+    8
+    八
+    eight
+    EIGHT
+~[9]('synonym': 'true')
+    9
+    九
+    nine
+    NINE
+~[10]('synonym': 'true')
+    10
+    十
+    ten
+    TEN
+~[品牌]('synonym': 'true')
+    品牌
+    牌子
+~[尺寸]('synonym': 'true')
+    尺寸
+    大小
+    尺码
+    码号
+    码
+~[年龄]('synonym': 'true')
+    年龄
+    年纪
+    年龄段
+~[地点]('synonym': 'true')
+    地址
+    地方
+    地点
+~[二狗]('synonym': 'true')
+    二购
+    狗
+    王二狗
+    王二购
+    2狗
+~[优惠券]('synonym': 'true')
+    打折
+    优惠
+    实惠
+    特惠
+    折扣
+    打折扣
+    优惠卷
+    打折卷
+    打折劵
+    券
+    卷

@@ -1,0 +1,119 @@
+# mbuckler/tf-faster-rcnn-deps
+#
+# Dockerfile to hold dependencies for the Tensorflow implmentation
+# of Faster RCNN
+
+FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
+#FROM nvidia/cuda:10.0-cudnn7-runtime-ubuntu16.04
+# 实测用阿里云加速后是三分半，不用1分半，不知道啥情况
+#FROM registry.cn-shanghai.aliyuncs.com/tcc-public/tensorflow:latest-cuda10.0-py3
+# 实测用阿里云加速后是12分钟
+
+SHELL ["/bin/bash", "-c"]
+
+WORKDIR /eliza
+
+#RUN apt-get clean && cd /var/lib/apt && mv lists lists.old && mkdir -p lists/partial && apt-get clean
+#RUN apt-get update && apt-get install -y apt-transport-https
+#RUN echo 'deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64 /' > /etc/apt/sources.list.d/cuda.list
+
+# 更换镜像源，加速
+COPY ./config/mirror/sources_qinghua.list /etc/apt/sources.list
+
+# Get required packages
+RUN apt-get clean && apt-get update -qq && apt-get install -y --no-install-recommends --fix-missing \
+                  vim \
+                  libjpeg-dev \
+                  libfreetype6 \
+                  libfreetype6-dev \
+                  zlib1g-dev \
+                  cmake \
+                  wget \
+                  cython \
+                  git \
+                  openssl \
+                  libssl-dev \
+                  libsm6 \
+                  libglib2.0-dev \
+                  libxrender1 \
+                  libxext-dev \
+                  curl \
+                  openssh-server \
+                  openssh-client \
+                  sqlite sqlite3  libsqlite3-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    python -V
+
+# 配置ssh端口
+RUN echo "root:eliza" | chpasswd && echo "PermitRootLogin yes" >> /etc/ssh/sshd_config && \
+    sed '1,$s/PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config > /etc/ssh/sshd_config1 && mv /etc/ssh/sshd_config1 /etc/ssh/sshd_config && \
+    mkdir /run/sshd && /usr/sbin/sshd
+
+COPY ./software/Python-3.6.5.tgz ./software/Python-3.6.5.tgz
+COPY ./software/sqlite-autoconf-3250200.tar.gz ./software/sqlite-autoconf-3250200.tar.gz
+
+# Get required packages
+RUN cd software && tar -zxvf sqlite-autoconf-3250200.tar.gz && cd sqlite-autoconf-3250200 && \
+    ./configure --prefix=/usr/local/sqlite3 && make && make install && cd .. && \
+    tar xfz Python-3.6.5.tgz && cd Python-3.6.5 && \
+    ./configure --with-ssl --enable-optimizations --enable-loadable-sqlite-extensions && make && make install && \
+    rm /usr/bin/python && ln -s /usr/local/bin/python3 /usr/bin/python && python -V
+
+RUN /usr/local/bin/pip3 install pip -U -i https://mirrors.aliyun.com/pypi/simple && \
+    ln -s /usr/local/bin/pip3.6 /usr/bin/pip && pip -V && \
+    pip config set global.index-url https://mirrors.aliyun.com/pypi/simple
+
+# COPY pip安装包
+COPY config/pip/requirements_eliza.txt ./config/pip/requirements.txt
+
+# pip 安装
+RUN pip install -r ./config/pip/requirements.txt
+
+# COPY底层到docker中
+COPY  ./source/eliza_stack ./source/eliza_stack
+
+# COPY项目到docker中
+COPY  ./source/comp_covid-19_zyb ./source/comp_covid-19_zyb
+
+#配置环境变量
+ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/lib
+ENV CUDA_HOME /usr/local/cuda
+ENV PYTHONPATH $PYTHONPATH:/eliza/source/eliza_stack
+
+#设置工作目录
+WORKDIR /eliza/source/comp_covid-19_zyb/
+
+# 暴露调试端口
+EXPOSE 22
+
+
+#docker创建
+#sudo docker build -t eliza-comp:zyb1 -f Dockerfile-compzyb .
+
+#docker镜像存储
+#sudo docker save zhangyanbo2007/face-detector-gpu:dev1  -o  ./images/face-detector-gpu.tar
+#sudo chown -R zyb:zyb ./images/face-detector-gpu.tar
+
+#docker镜像分卷存储（2g）
+#sudo split face-detector-gpu.tar -b 2G  -d -a 2 face-detector-gpu.tar
+
+
+#docker镜像解压
+#sudo docker load -i ./images/face-detector-gpu.tar
+
+#docker镜像上传
+#sudo docker push zhangyanbo2007/face-detector-gpu:dev1
+
+#docker镜像下载
+#sudo docker pull zhangyanbo2007/face-detector-gpu:dev1
+
+#docker执行
+#sudo nvidia-docker run -v /data:/tcdata -it registry.cn-shenzhen.aliyuncs.com/eliza/eliza-covid-19:dev1 /bin/bash
+
+#docker push
+#sudo docker login --username=立早立早说 registry.cn-shenzhen.aliyuncs.com
+#sudo docker login --username=hi31730523@aliyun.com registry.cn-shenzhen.aliyuncs.com
+
+#docker 远程开发环境配置
+#sudo nvidia-docker run -d -v /data/opendata:/tcdata -it -p 1111:1111 -p 2222:22 -p 3333:3333 -p 4444:4444 -p 5555:5555 -p 6666:6666 -p 7777:7777 eliza-comp:zyb1 /bin/bash

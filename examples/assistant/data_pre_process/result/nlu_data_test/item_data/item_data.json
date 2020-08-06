@@ -1,0 +1,110 @@
+{
+  "rasa_nlu_data": {
+    "common_examples": [
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "裤子男士宽松韩版潮流大码卫裤男装春秋款百搭束脚休闲九分运动裤"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "朵拉朵尚去角质慕斯面部去角质清洁毛孔全身女男去死皮脸部磨砂膏"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "男女时尚个性纯棉透气防尘防雾霾黑色网红女学生口罩韩版夏季薄款"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "维达手帕纸4层迷你小包纸巾36包*3共108包"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "阔腿裤女夏坠感学生宽松显瘦九分春秋垂感cec裤子直筒奶奶松紧腰"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "健身服男套装运动速干紧身衣训练服跑步篮球装备晨跑春夏季健身房"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "产后哺乳衣外出春装新款加厚哺乳卫衣外穿喂奶衣哺乳衣秋冬装上衣"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "婴儿童宝宝学步车多功能防侧翻手推男女小孩防o型腿可变摇马学行"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "来伊份零食大礼包网红小吃休闲食品一箱混合装整箱送女生来一份"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "摩托车助力车改装路虎液晶仪表BWS咪表码表祼车头直上通用七彩屏"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "(加里布)春秋短款外套女新款韩版连帽休闲小风衣宽松夹克潮"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "美国正品蔻驰coach波士顿女包印花拼色单肩斜挎手提枕头包58312"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "特百惠水杯500ml随手杯便携塑料男女简约家用学生大容量运动杯子"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "2019夏户外运动短袖男速干t恤透气宽松跑步休闲大码吸汗健身半袖"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "[玫瑰][玫瑰]信用卡刷空了没钱还，怎么办？再牛逼的POSS"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "老款奥迪老A6/A6L/2003/2004/2005/2006年汽车全包围脚垫专用"
+      },
+      {
+        "answer_text": {},
+        "entities": [],
+        "intent": "item_data",
+        "text": "华为荣耀magic2手机壳全包防摔magic"
+      }
+    ],
+    "entity_synonyms": [],
+    "regex_features": []
+  }
+}

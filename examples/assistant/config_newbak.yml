@@ -1,0 +1,41 @@
+language: "zh"
+
+pipeline:
+- name: "rasa_nlu_eliza.tokenizers.jieba_tokenizer.JiebaTokenizer"
+  dictionary_path: "configs/domain_words"
+  stopword_path: "configs/stop_words"
+  idf_path: "configs/idf_words"
+- name: "rasa_nlu_eliza.extractors.jieba_pseg_extractor.JiebaPsegExtractor"
+  part_of_speech: ["n", "t", "ns", "number", "constellation", "fortune", "brand", "sex", "age"]
+- name: "rasa_nlu_eliza.featurizers.bert_vectors_featurizer.BertVectorsFeaturizer"
+  ip: "localhost"
+  port: 5555
+  port_out: 5556
+  show_server_config: True
+  timeout: 7000
+  check_version: False
+- name: "rasa_nlu_eliza.classifiers.embedding_bert_intent_estimator_classifier.EmbeddingBertIntentEstimatorClassifier"
+  batch_size: 256
+  epochs: 250
+- name: "RegexFeaturizer"
+- name: "rasa_nlu_eliza.extractors.bilstm_crf_entity_extractor.BilstmCRFEntityExtractor"
+  batches_per_epoch: 10
+  batch_size: 50
+  model_type: "bilstm"
+  config_proto: {
+    "device_count": 8,
+    "inter_op_parallelism_threads": 0,
+    "intra_op_parallelism_threads": 0,
+    "allow_growth": True
+    }
+- name: "EntitySynonymMapper"
+
+policies:
+  - name: MappingPolicy
+  - name: FallbackPolicy
+    fallback_action_name: 'utter_default'
+    nlu_threshold: 0.5
+    core_threshold: 0.3
+  - name: MemoizationPolicy
+    max_history: 3
+  - name: FormPolicy

@@ -1,0 +1,94 @@
+intents:
+  - intent_common_faqs: {use_entities: false}
+  - intent_common_faq_commission: {use_entities: false}
+  - intent_common_faq_numbers: {use_entities: false}
+  - intent_personal_info: {use_entities: false}
+  - intent_intro_constellation
+  - intent_counsel_other: {use_entities: false}
+  - intent_exchange: {use_entities: false}
+  - intent_query_weather
+  - intent_buy_other: {use_entities: false}
+  - intent_common_faq_frozon: {use_entities: false}
+  - intent_pickout: {use_entities: false}
+  - intent_common_faq_binding_order: {use_entities: false}
+  - intent_buy_item
+  - intent_common_command: {use_entities: false}
+  - intent_common_faq_cash: {use_entities: false}
+  - intent_poster: {use_entities: false}
+  - intent_cash: {use_entities: false}
+  - intent_common_faq_rebate: {use_entities: false}
+  - intent_query_constellation
+  - greetgreet: {use_entities: false}
+  - goodbye: {use_entities: false}
+  - thanks: {use_entities: false}
+  - inform: {use_entities: false}
+  - confirm: {use_entities: false}
+
+entities:
+  - ns
+  - t
+  - n
+  - matches
+  - fortune
+  - constellation
+  - commodity
+
+slots:
+  ns:
+    type: unfeaturized
+    auto_fill: false
+  t:
+    type: unfeaturized
+    auto_fill: false
+  n:
+    type: unfeaturized
+    auto_fill: false
+  matches:
+    type: unfeaturized
+    auto_fill: false
+  fortune:
+    type: text
+  constellation:
+    type: text
+  commodity:
+    type: text
+  requested_slot:
+    type: unfeaturized
+
+templates:
+  utter_greet:
+    - "您好! 我是机器人Ergou，很高兴为您服务。"
+    - "你好! 我是Ergou，可以帮您办理流量套餐，话费查询等业务。"
+    - "hi! 我是Ergou，有什么可以帮您吗。"
+  utter_goodbye:
+    - "再见，为您服务很开心"
+    - "Bye， 下次再见"
+  utter_default:
+    - "您说什么，Ergou听不懂。"
+    - "你说的Ergou不懂呀！"
+    - "不好意思，您能换个说法吗？"
+  utter_thanks:
+    - "不用谢"
+    - "我应该做的"
+    - "您开心我就开心"
+  utter_working_on_it:
+    - text: "正在查询中，请稍后 ..."
+  utter_ask_ns:
+    - text: "哪里呢？"
+  utter_ask_t:
+    - text: "什么时候？"
+  utter_report_weather:
+    - text: "{matches}"
+  utter_confirm:
+    - "你确认吗？"
+  utter_wrong_t:
+    - "暂不支持{t}的查询"
+
+actions:
+  - utter_ask_ns
+  - utter_ask_t
+  - utter_report_weather
+  - action_unknown_intent
+
+forms:
+  - report_weather_form

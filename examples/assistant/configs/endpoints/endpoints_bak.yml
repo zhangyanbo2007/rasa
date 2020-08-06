@@ -1,0 +1,10 @@
+action_endpoint:
+  url: http://192.168.46.36:5055/webhook
+nlu:
+  url: http://192.168.46.36:5000endpoints.yml
+tracker_store:
+    store_type: mongod
+    url: mongodb://192.168.46.36:27017
+    db: admin
+    username: zyb
+    password: zyb123

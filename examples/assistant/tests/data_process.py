@@ -13,7 +13,7 @@ def nlu_data_to_rasa():
     :return:
     """
     # 读语料
-    nlu_data = pd.read_excel("../doc_data/origin_data/nlu_data/data_annotation/英语模板_v5(4208)-20200723.xlsx",
+    nlu_data = pd.read_excel("./origin_data/英语模板_v5(4208)-20200723.xlsx",
                              sheet_name="语料")
     nlu_data_dict = {
         "rasa_nlu_data": {
@@ -113,7 +113,7 @@ def nlu_data_to_rasa():
     plt.bar(range(len(keys_list)), values_list, color='g', align='center')
     plt.show()
     plt.savefig("./test_result/intent_count.png")
-    with open("../../../../ds_assistant/data/nlu/train.json", "w", encoding="utf-8") as f:
+    with open("../../../../assistant/data/nlu/train.json", "w", encoding="utf-8") as f:
         json.dump(nlu_data_dict, f, ensure_ascii=False, indent=2, sort_keys=True)
 
 
@@ -124,7 +124,7 @@ def nlu_data_to_dmai():
     TODO: 这里为调试方便跟原生态的语料略有不同,这个留意下
     :return:
     """
-    nlu_data = pd.read_excel("../doc_data/origin_data/nlu_data/data_annotation/英语模板_v5(4208)-20200723.xlsx",
+    nlu_data = pd.read_excel("./origin_data/英语模板_v5(4208)-20200723.xlsx",
                              sheet_name="语料")
     dmai_data = {"cus_ents": {"normal_entities": []}}
     entity_id = {}
