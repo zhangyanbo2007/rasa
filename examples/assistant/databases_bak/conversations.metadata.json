@@ -1,1 +1,0 @@
-{"options":{},"indexes":[{"v":1,"key":{"_id":1},"name":"_id_","ns":"admin.conversations"},{"v":1,"key":{"sender_id":1},"name":"sender_id_1","ns":"admin.conversations"}]}

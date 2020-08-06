@@ -1,7 +1,0 @@
-Airplane
-Bluetooth
-wifi
-Flashlight
-Data connection
-Bike mode
-Game mode
