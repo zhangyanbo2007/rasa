@@ -185,11 +185,11 @@ which featurizers should be used.
 If you don’t set the option `featurizers` all available features will be used.
 To check which components have the option `featurizers` available, see [Components](./components.mdx).
 
-Here is an example configuration file where the `DIETClassifier` is using all available features and the
-`ResponseSelector` is just using the features from the `ConveRTFeaturizer` and the `CountVectorsFeaturizer`.
+<!-- Here is an example configuration file where the `DIETClassifier` is using all available features and the -->
+<!-- `ResponseSelector` is just using the features from the `ConveRTFeaturizer` and the `CountVectorsFeaturizer`. -->
 
-```yaml (docs/sources/data/configs_for_docs/config_featurizers.yml)
-```
+<!-- ```yaml (docs/sources/data/configs_for_docs/config_featurizers.yml) -->
+<!-- ``` -->
 
 ### Multi-Intent Classification
 
@@ -371,8 +371,8 @@ if you don’t have enough training data.
 See [Pre-trained Word Vectors](./language-support.mdx#pretrained-word-vectors) for more information about loading spacy language models.
 To use the components and configure them separately:
 
-```yaml (docs/sources/data/configs_for_docs/pretrained_embeddings_spacy_config.yml)
-```
+{/* ```yaml (docs/sources/data/configs_for_docs/pretrained_embeddings_spacy_config.yml) */}
+{/* ``` */}
 
 </details>
 
@@ -403,8 +403,8 @@ platforms.
 
 To use the components and configure them separately:
 
-```yaml (docs/sources/data/configs_for_docs/pretrained_embeddings_convert_config.yml)
-```
+{/* ```yaml (docs/sources/data/configs_for_docs/pretrained_embeddings_convert_config.yml) */}
+{/* ``` */}
 
 </details>
 
@@ -424,8 +424,8 @@ The `supervised_embeddings` pipeline supports any language that can be whitespac
 whitespace for tokenization. You can customize the setup of this pipeline by adding or changing components. Here are
 the default components that make up the `supervised_embeddings` pipeline:
 
-```yaml (docs/sources/data/configs_for_docs/supervised_embeddings_config.yml)
-```
+{/* ```yaml (docs/sources/data/configs_for_docs/supervised_embeddings_config.yml) */}
+{/* ``` */}
 
 So for example, if your chosen language is not whitespace-tokenized (words are not separated by spaces), you
 can replace the `WhitespaceTokenizer` with your own tokenizer. We support a number of different [tokenizers](./components.mdx#tokenizers),
